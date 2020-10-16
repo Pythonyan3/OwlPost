@@ -23,9 +23,7 @@ class LoginActivity : AppCompatActivity() {
                 this.finish()
             }
             else
-            {
                 Toast.makeText(this@LoginActivity, "Адрес или пароль некорректны!", Toast.LENGTH_SHORT).show()
-            }
         }
     }
 

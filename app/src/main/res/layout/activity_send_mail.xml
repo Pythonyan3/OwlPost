@@ -28,42 +28,54 @@
 
         <CheckBox
             android:id="@+id/doEncrypt"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_marginEnd="15dp"
             android:background="@drawable/custom_checkbox"
-            android:button="@drawable/ic_key"
+            android:button="?android:attr/activatedBackgroundIndicator"
+            android:foreground="@drawable/ic_encrypt"
+            android:foregroundGravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/showFormatPanel"
             app:layout_constraintTop_toTopOf="parent" />
 
         <CheckBox
             android:id="@+id/doEcp"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_marginEnd="15dp"
             android:background="@drawable/custom_checkbox"
-            android:button="@drawable/ic_digital_signature"
+            android:button="?android:attr/activatedBackgroundIndicator"
+            android:foreground="@drawable/ic_digital_signature"
+            android:foregroundGravity="center"
+            android:paddingStart="5dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/doEncrypt"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
+        <CheckBox
             android:id="@+id/showFormatPanel"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_marginEnd="15dp"
-            android:background="@drawable/ic_format"
+            android:background="@drawable/custom_checkbox"
+            android:button="?android:attr/activatedBackgroundIndicator"
+            android:enabled="false"
+            android:foreground="@drawable/ic_format"
+            android:foregroundGravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/attach_button"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/send_button"
+            style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_marginEnd="15dp"
-            android:background="@drawable/ic_send_button"
+            android:background="@color/colorPrimary"
+            android:foreground="@android:drawable/ic_menu_send"
+            android:foregroundGravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -93,10 +105,13 @@
 
         <Button
             android:id="@+id/attach_button"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_marginEnd="15dp"
-            android:background="@drawable/ic_attach_file"
+            android:background="@color/colorPrimary"
+            android:foreground="@drawable/ic_attach_file"
+            android:gravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/send_button"
             app:layout_constraintTop_toTopOf="parent" />
@@ -119,14 +134,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
+                android:autofillHints=""
                 android:ems="10"
                 android:hint="@string/to_hint"
                 android:inputType="textEmailAddress"
                 android:textSize="18sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:autofillHints="" />
+                app:layout_constraintTop_toTopOf="parent" />
 
             <EditText
                 android:id="@+id/subject"
@@ -164,7 +179,7 @@
         android:id="@+id/bottom_panel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/layout_line"
+        android:background="@drawable/formatting_panel_top_line"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
         android:visibility="visible"
@@ -172,70 +187,76 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <Button
+        <CheckBox
             android:id="@+id/bold_btn"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:background="@drawable/ic_bold"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/custom_checkbox"
+            android:button="@color/colorPrimary"
+            android:drawableTop="@drawable/ic_bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/italic_btn"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
+        <CheckBox
             android:id="@+id/italic_btn"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:background="@drawable/ic_italic"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/custom_checkbox"
+            android:button="@color/colorPrimary"
+            android:drawableTop="@drawable/ic_italic"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/underline_btn"
             app:layout_constraintStart_toEndOf="@+id/bold_btn"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
+        <CheckBox
             android:id="@+id/underline_btn"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:background="@drawable/ic_underline"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/custom_checkbox"
+            android:button="@color/colorPrimary"
+            android:drawableTop="@drawable/ic_underline"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/color_btn"
+            app:layout_constraintEnd_toStartOf="@+id/font_color_spinner"
             app:layout_constraintStart_toEndOf="@+id/italic_btn"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
-            android:id="@+id/color_btn"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:background="@drawable/ic_color_format"
+        <Spinner
+            android:id="@+id/font_color_spinner"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/ic_font_color"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/fill_btn"
+            app:layout_constraintEnd_toStartOf="@+id/fill_color_spinner"
             app:layout_constraintStart_toEndOf="@+id/underline_btn"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
-            android:id="@+id/fill_btn"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+        <Spinner
+            android:id="@+id/fill_color_spinner"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:background="@drawable/ic_fill"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/cancel_format"
-            app:layout_constraintStart_toEndOf="@+id/color_btn"
+            app:layout_constraintStart_toEndOf="@+id/font_color_spinner"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/cancel_format"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:background="@drawable/ic_format_clear"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/close_btn"
-            app:layout_constraintStart_toEndOf="@+id/fill_btn"
+            app:layout_constraintStart_toEndOf="@+id/fill_color_spinner"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/close_btn"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:background="@drawable/ic_close"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

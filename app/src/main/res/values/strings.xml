@@ -1,6 +1,18 @@
 <resources>
     <string name="app_name">OwlPost</string>
+
+    <!-- Send activity. Email form -->
     <string name="to_hint">Получатель</string>
     <string name="subject_hint">Тема сообщения</string>
     <string name="message_body_hint">Сообщение</string>
+
+    <integer-array name="formattingColors">
+        <item>@color/formattingBlack</item>
+        <item>@color/formattingRed</item>
+        <item>@color/formattingBlue</item>
+        <item>@color/formattingGreen</item>
+        <item>@color/formattingYellow</item>
+        <item>@color/formattingGrey</item>
+    </integer-array>
+
 </resources>

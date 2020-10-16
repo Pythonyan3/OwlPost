@@ -3,5 +3,11 @@
     <color name="colorPrimary">#efc384</color>
     <color name="colorPrimaryDark">#e39c34</color>
     <color name="colorAccent">#efc384</color>
-    <color name="black">#000</color>
+
+    <color name="formattingBlack">#000000</color>
+    <color name="formattingRed">#FF0000</color>
+    <color name="formattingBlue">#0000FF</color>
+    <color name="formattingGreen">#00FF00</color>
+    <color name="formattingYellow">#FFFF00</color>
+    <color name="formattingGrey">#808080</color>
 </resources>
