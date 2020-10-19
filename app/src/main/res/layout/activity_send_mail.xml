@@ -48,7 +48,6 @@
             android:button="?android:attr/activatedBackgroundIndicator"
             android:foreground="@drawable/ic_digital_signature"
             android:foregroundGravity="center"
-            android:paddingStart="5dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/doEncrypt"
             app:layout_constraintTop_toTopOf="parent" />
@@ -74,7 +73,7 @@
             android:layout_height="30dp"
             android:layout_marginEnd="15dp"
             android:background="@color/colorPrimary"
-            android:foreground="@android:drawable/ic_menu_send"
+            android:drawableTop="@android:drawable/ic_menu_send"
             android:foregroundGravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -110,7 +109,7 @@
             android:layout_height="30dp"
             android:layout_marginEnd="15dp"
             android:background="@color/colorPrimary"
-            android:foreground="@drawable/ic_attach_file"
+            android:drawableTop="@drawable/ic_attach_file"
             android:gravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/send_button"
@@ -157,7 +156,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/toEmails"
                 android:autofillHints="" />
 
-            <EditText
+            <com.example.owlpost.ui.SelectableEditText
                 android:id="@+id/messageBody"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -169,8 +168,7 @@
                 android:textSize="18sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/subject"
-                android:autofillHints="" />
+                app:layout_constraintTop_toBottomOf="@+id/subject" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
@@ -188,31 +186,31 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <CheckBox
-            android:id="@+id/bold_btn"
+            android:id="@+id/bold_checkbox"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:background="@drawable/custom_checkbox"
             android:button="@color/colorPrimary"
             android:drawableTop="@drawable/ic_bold"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/italic_btn"
+            app:layout_constraintEnd_toStartOf="@+id/italic_checkbox"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <CheckBox
-            android:id="@+id/italic_btn"
+            android:id="@+id/italic_checkbox"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:background="@drawable/custom_checkbox"
             android:button="@color/colorPrimary"
             android:drawableTop="@drawable/ic_italic"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/underline_btn"
-            app:layout_constraintStart_toEndOf="@+id/bold_btn"
+            app:layout_constraintEnd_toStartOf="@+id/underline_checkbox"
+            app:layout_constraintStart_toEndOf="@+id/bold_checkbox"
             app:layout_constraintTop_toTopOf="parent" />
 
         <CheckBox
-            android:id="@+id/underline_btn"
+            android:id="@+id/underline_checkbox"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:background="@drawable/custom_checkbox"
@@ -220,7 +218,7 @@
             android:drawableTop="@drawable/ic_underline"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/font_color_spinner"
-            app:layout_constraintStart_toEndOf="@+id/italic_btn"
+            app:layout_constraintStart_toEndOf="@+id/italic_checkbox"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Spinner
@@ -230,7 +228,7 @@
             android:background="@drawable/ic_font_color"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/fill_color_spinner"
-            app:layout_constraintStart_toEndOf="@+id/underline_btn"
+            app:layout_constraintStart_toEndOf="@+id/underline_checkbox"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Spinner

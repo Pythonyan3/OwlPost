@@ -12,12 +12,16 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.example.owlpost.models.*
 import com.example.owlpost.ui.ColorSpinnerAdapter
+import com.example.owlpost.ui.OnSelectionChangedListener
 import kotlinx.android.synthetic.main.activity_send_mail.*
 
 
 class SendMail : AppCompatActivity() {
     private val settings = Settings()
     private lateinit var currentUser: User
+    private lateinit var foregroundColors: Array<Int>
+    private lateinit var backgroundColors: Array<Int>
+    private var isFormattingPanelUpdating = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +32,9 @@ class SendMail : AppCompatActivity() {
     }
 
     private fun initVariables() {
+        foregroundColors = this.resources.getIntArray(R.array.formattingColors).toList().toTypedArray()
+        backgroundColors = this.resources.getIntArray(R.array.formattingColors).toList().toTypedArray()
+        backgroundColors[0] = Color.WHITE
         //settings.init(this)
         //currentUser = settings.getCurrentUser()
     }
@@ -36,6 +43,16 @@ class SendMail : AppCompatActivity() {
 
         back_button.setOnClickListener {
             this.finish()
+        }
+
+        doEcp.setOnCheckedChangeListener{ checkbox: CompoundButton, state: Boolean ->
+            if (state)
+                Toast.makeText(this, "ЭЦП письма включена", Toast.LENGTH_SHORT).show()
+        }
+
+        doEncrypt.setOnCheckedChangeListener{ checkbox: CompoundButton, state: Boolean ->
+            if (state)
+                Toast.makeText(this, "Шифрование письма включено", Toast.LENGTH_SHORT).show()
         }
 
         showFormatPanel.setOnCheckedChangeListener{ it: CompoundButton, state: Boolean ->
@@ -59,21 +76,27 @@ class SendMail : AppCompatActivity() {
             }
         }
 
-        bold_btn.setOnClickListener{
+        messageBody.onSelectionChangedListener = object: OnSelectionChangedListener {
+            override fun onSelectionChanged(selectionStart: Int, selectionEnd: Int) {
+                updateFormattingPanel(selectionStart, selectionEnd)
+            }
+        }
+
+        bold_checkbox.setOnClickListener{
             if ((it as CheckBox).isChecked)
                 setMessageSpan(StyleSpan(Typeface.BOLD))
             else
-                removeMessageSpan(Typeface.BOLD)
+                removeMessageSpan(StyleSpan(Typeface.BOLD))
         }
 
-        italic_btn.setOnClickListener{
+        italic_checkbox.setOnClickListener{
             if ((it as CheckBox).isChecked)
                 setMessageSpan(StyleSpan(Typeface.ITALIC))
             else
-                removeMessageSpan(Typeface.ITALIC)
+                removeMessageSpan(StyleSpan(Typeface.ITALIC))
         }
 
-        underline_btn.setOnClickListener{
+        underline_checkbox.setOnClickListener{
             if ((it as CheckBox).isChecked)
                 setMessageSpan(UnderlineSpan())
             else
@@ -86,27 +109,27 @@ class SendMail : AppCompatActivity() {
                 messageBody.selectionStart,
                 messageBody.selectionEnd,
             )
-            bold_btn.isChecked = false; italic_btn.isChecked = false
-            underline_btn.isChecked = false
+            updateFormattingPanel(messageBody.selectionStart, messageBody.selectionEnd)
         }
 
-        val foregroundColors = this.resources.getIntArray(R.array.formattingColors).toList().toTypedArray()
         font_color_spinner.adapter = ColorSpinnerAdapter(this, foregroundColors)
-
         font_color_spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
             override fun onItemSelected(p: AdapterView<*>?, v: View?, position: Int, id: Long) {
-                setMessageSpan(ForegroundColorSpan(foregroundColors[position]))
+                if (position == 0)
+                    removeMessageSpan(ForegroundColorSpan(foregroundColors[position]))
+                else
+                    setMessageSpan(ForegroundColorSpan(foregroundColors[position]))
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        val backgroundColors = this.resources.getIntArray(R.array.formattingColors).toList().toTypedArray()
-        backgroundColors[0] = Color.WHITE
         fill_color_spinner.adapter = ColorSpinnerAdapter(this, backgroundColors)
-
         fill_color_spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
             override fun onItemSelected(p: AdapterView<*>?, v: View?, position: Int, id: Long) {
-                setMessageSpan(BackgroundColorSpan(backgroundColors[position]))
+                if (position == 0)
+                    removeMessageSpan(BackgroundColorSpan(foregroundColors[position]))
+                else
+                    setMessageSpan(BackgroundColorSpan(backgroundColors[position]))
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -118,7 +141,7 @@ class SendMail : AppCompatActivity() {
     }
 
     private fun setMessageSpan(span: ParcelableSpan){
-        if (messageBody.isFocused)
+        if (messageBody.isFocused && !isFormattingPanelUpdating)
             setSpan(
                 messageBody.text as SpannableStringBuilder,
                 span,
@@ -127,23 +150,46 @@ class SendMail : AppCompatActivity() {
             )
     }
 
-    private fun removeMessageSpan(typeface: Int){
-        if (messageBody.isFocused)
-            removeSpan(
-                messageBody.text as SpannableStringBuilder,
-                messageBody.selectionStart,
-                messageBody.selectionEnd,
-                typeface
-            )
-    }
-
     private fun removeMessageSpan(span: ParcelableSpan){
-        if (messageBody.isFocused)
+        if (messageBody.isFocused && !isFormattingPanelUpdating)
             removeSpan(
                 messageBody.text as SpannableStringBuilder,
                 messageBody.selectionStart,
                 messageBody.selectionEnd,
                 span
             )
+    }
+
+    private fun updateFormattingPanel(selectionStart: Int, selectionEnd: Int) {
+        isFormattingPanelUpdating = true
+        var foregroundIndex = 0; var backgroundIndex = 0
+        var isBold = false; var isItalic = false; var isUnderline = false
+        val builder = (messageBody.text as SpannableStringBuilder)
+        val spans = builder.getSpans(selectionStart, selectionEnd, ParcelableSpan::class.java)
+
+        for (span in spans){
+            if (span is StyleSpan){
+                if (span.style == Typeface.BOLD)
+                    isBold = true
+                else if (span.style == Typeface.ITALIC)
+                    isItalic = true
+            }
+            else if(span is UnderlineSpan)
+                isUnderline = true
+            else if (span is ForegroundColorSpan)
+                foregroundIndex = foregroundColors.indexOf(span.foregroundColor)
+            else if (span is BackgroundColorSpan)
+                backgroundIndex = backgroundColors.indexOf(span.backgroundColor)
+        }
+        bold_checkbox.isChecked = isBold; italic_checkbox.isChecked = isItalic
+        underline_checkbox.isChecked = isUnderline
+
+        val foregroundSpinnerView = (font_color_spinner.findViewById(R.id.color_view) as TextView)
+        foregroundSpinnerView.setBackgroundColor(setTransparent(foregroundColors[foregroundIndex]))
+
+        val backgroundSpinnerView = (fill_color_spinner.findViewById(R.id.color_view) as TextView)
+        backgroundSpinnerView.setBackgroundColor(setTransparent(backgroundColors[backgroundIndex]))
+
+        isFormattingPanelUpdating = false
     }
 }
