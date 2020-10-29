@@ -170,6 +170,15 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/subject" />
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/attachmentsList"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/messageBody" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 
@@ -247,12 +256,12 @@
             android:layout_height="24dp"
             android:background="@drawable/ic_format_clear"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/close_btn"
+            app:layout_constraintEnd_toStartOf="@+id/close_format_panel_btn"
             app:layout_constraintStart_toEndOf="@+id/fill_color_spinner"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
-            android:id="@+id/close_btn"
+            android:id="@+id/close_format_panel_btn"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:background="@drawable/ic_close"

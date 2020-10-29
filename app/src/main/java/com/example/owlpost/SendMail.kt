@@ -1,19 +1,30 @@
 package com.example.owlpost
 
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.text.ParcelableSpan
 import android.text.SpannableStringBuilder
-import android.text.style.*
+import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.owlpost.models.*
 import com.example.owlpost.ui.ColorSpinnerAdapter
 import com.example.owlpost.ui.OnSelectionChangedListener
 import kotlinx.android.synthetic.main.activity_send_mail.*
+import java.io.FileNotFoundException
 
 
 class SendMail : AppCompatActivity() {
@@ -21,7 +32,6 @@ class SendMail : AppCompatActivity() {
     private lateinit var currentUser: User
     private lateinit var foregroundColors: Array<Int>
     private lateinit var backgroundColors: Array<Int>
-    private var isFormattingPanelUpdating = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +39,47 @@ class SendMail : AppCompatActivity() {
 
         initVariables()
         initViewsListeners()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 111 && resultCode == Activity.RESULT_OK && data != null){
+            try{
+                val uri = UriWrapper(data.data as Uri, this)
+                val fis = uri.getInputStream() ?: throw FileNotFoundException("Couldn't read file")
+                fis.close()
+            }
+            catch (e: UriWrapperException){
+                Toast.makeText(
+                    this,
+                    "Невозможно прикрепить файл!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            catch (e: FileNotFoundException){
+                Toast.makeText(
+                    this,
+                    "Невозможно прикрепить файл!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            catch (e: FileSizeException){
+                Toast.makeText(
+                    this,
+                    "Размер файла не должен превышать 25Мб",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        showFilePickerIntent()
     }
 
     private fun initVariables() {
@@ -60,7 +111,20 @@ class SendMail : AppCompatActivity() {
         }
 
         attach_button.setOnClickListener {
-            Toast.makeText(this, "ATTACH FILE", Toast.LENGTH_SHORT).show()
+            if (ContextCompat.checkSelfPermission(
+                    this@SendMail,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                )
+                != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    1
+                )
+            }
+            else{
+                showFilePickerIntent()
+            }
         }
 
         send_button.setOnClickListener {
@@ -134,14 +198,14 @@ class SendMail : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        close_btn.setOnClickListener {
+        close_format_panel_btn.setOnClickListener {
             showFormatPanel.isChecked = false
             bottom_panel.visibility = View.GONE
         }
     }
 
     private fun setMessageSpan(span: ParcelableSpan){
-        if (messageBody.isFocused && !isFormattingPanelUpdating)
+        if (messageBody.isFocused)
             setSpan(
                 messageBody.text as SpannableStringBuilder,
                 span,
@@ -151,7 +215,7 @@ class SendMail : AppCompatActivity() {
     }
 
     private fun removeMessageSpan(span: ParcelableSpan){
-        if (messageBody.isFocused && !isFormattingPanelUpdating)
+        if (messageBody.isFocused)
             removeSpan(
                 messageBody.text as SpannableStringBuilder,
                 messageBody.selectionStart,
@@ -161,7 +225,6 @@ class SendMail : AppCompatActivity() {
     }
 
     private fun updateFormattingPanel(selectionStart: Int, selectionEnd: Int) {
-        isFormattingPanelUpdating = true
         var foregroundIndex = 0; var backgroundIndex = 0
         var isBold = false; var isItalic = false; var isUnderline = false
         val builder = (messageBody.text as SpannableStringBuilder)
@@ -189,7 +252,12 @@ class SendMail : AppCompatActivity() {
 
         val backgroundSpinnerView = (fill_color_spinner.findViewById(R.id.color_view) as TextView)
         backgroundSpinnerView.setBackgroundColor(setTransparent(backgroundColors[backgroundIndex]))
+    }
 
-        isFormattingPanelUpdating = false
+    private fun showFilePickerIntent(){
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.type = "*/*"
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        startActivityForResult(Intent.createChooser(intent, "Выберите файл"), 111)
     }
 }
