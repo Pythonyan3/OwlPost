@@ -6,8 +6,17 @@
     <string name="subject_hint">Тема сообщения</string>
     <string name="message_body_hint">Сообщение</string>
 
-    <integer-array name="formattingColors">
+    <integer-array name="foregroundColors">
         <item>@color/formattingBlack</item>
+        <item>@color/formattingRed</item>
+        <item>@color/formattingBlue</item>
+        <item>@color/formattingGreen</item>
+        <item>@color/formattingYellow</item>
+        <item>@color/formattingGrey</item>
+    </integer-array>
+
+    <integer-array name="backgroundColors">
+        <item>@color/formattingWhite</item>
         <item>@color/formattingRed</item>
         <item>@color/formattingBlue</item>
         <item>@color/formattingGreen</item>

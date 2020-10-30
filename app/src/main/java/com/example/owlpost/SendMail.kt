@@ -5,7 +5,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
@@ -20,10 +19,13 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.models.*
 import com.example.owlpost.ui.ColorSpinnerAdapter
 import com.example.owlpost.ui.OnSelectionChangedListener
+import com.example.owlpost.ui.RecyclerAttachmentsAdapter
 import kotlinx.android.synthetic.main.activity_send_mail.*
+import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 
 
@@ -32,43 +34,29 @@ class SendMail : AppCompatActivity() {
     private lateinit var currentUser: User
     private lateinit var foregroundColors: Array<Int>
     private lateinit var backgroundColors: Array<Int>
+    private val attachments = ArrayList<UriWrapper>()
+    private val PERMISSIONS_REQUEST_CODE = 1
+    private val PICK_FILE_REQUEST_CODE = 2
+    private var attachFileJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_send_mail)
-
         initVariables()
         initViewsListeners()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 111 && resultCode == Activity.RESULT_OK && data != null){
-            try{
-                val uri = UriWrapper(data.data as Uri, this)
-                val fis = uri.getInputStream() ?: throw FileNotFoundException("Couldn't read file")
-                fis.close()
-            }
-            catch (e: UriWrapperException){
-                Toast.makeText(
-                    this,
-                    "Невозможно прикрепить файл!",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            catch (e: FileNotFoundException){
-                Toast.makeText(
-                    this,
-                    "Невозможно прикрепить файл!",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            catch (e: FileSizeException){
-                Toast.makeText(
-                    this,
-                    "Размер файла не должен превышать 25Мб",
-                    Toast.LENGTH_SHORT
-                ).show()
+        if (requestCode == PICK_FILE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null){
+            attachFileJob = CoroutineScope(Dispatchers.IO).launch {
+                val attachment = getAttachment(data)
+                if (attachment != null){
+                    attachments.add(attachment)
+                    runOnUiThread{
+                        attachmentsRecycleView.adapter?.notifyDataSetChanged()
+                    }
+                }
             }
         }
     }
@@ -83,14 +71,15 @@ class SendMail : AppCompatActivity() {
     }
 
     private fun initVariables() {
-        foregroundColors = this.resources.getIntArray(R.array.formattingColors).toList().toTypedArray()
-        backgroundColors = this.resources.getIntArray(R.array.formattingColors).toList().toTypedArray()
-        backgroundColors[0] = Color.WHITE
+        foregroundColors = this.resources.getIntArray(R.array.foregroundColors).toList().toTypedArray()
+        backgroundColors = this.resources.getIntArray(R.array.backgroundColors).toList().toTypedArray()
         //settings.init(this)
         //currentUser = settings.getCurrentUser()
     }
 
     private fun initViewsListeners(){
+        attachmentsRecycleView.layoutManager = LinearLayoutManager(this@SendMail)
+        attachmentsRecycleView.adapter = RecyclerAttachmentsAdapter(attachments)
 
         back_button.setOnClickListener {
             this.finish()
@@ -115,11 +104,12 @@ class SendMail : AppCompatActivity() {
                     this@SendMail,
                     Manifest.permission.READ_EXTERNAL_STORAGE
                 )
-                != PackageManager.PERMISSION_GRANTED){
+                != PackageManager.PERMISSION_GRANTED
+            ){
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    1
+                    PERMISSIONS_REQUEST_CODE
                 )
             }
             else{
@@ -258,6 +248,38 @@ class SendMail : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
         intent.addCategory(Intent.CATEGORY_OPENABLE)
-        startActivityForResult(Intent.createChooser(intent, "Выберите файл"), 111)
+        startActivityForResult(
+            Intent.createChooser(intent, "Выберите файл"),
+            PICK_FILE_REQUEST_CODE
+        )
+    }
+
+    private fun getAttachment(data: Intent): UriWrapper?{
+        try{
+            val uri = UriWrapper(data.data as Uri, this@SendMail)
+            val fis = uri.getInputStream() ?: throw FileNotFoundException("")
+            fis.close()
+            return uri
+        }
+        catch (e: UriSchemeException){
+            shortToast("Не удалось прикрепить файл.")
+        }
+        catch (e: FileNotFoundException){
+            shortToast("Не удалось прикрепить файл.")
+        }
+        catch (e: FileSizeException) {
+            shortToast("Размер файла не должен превышать 25Мб.")
+        }
+        return null
+    }
+
+    private fun shortToast(message: String){
+        runOnUiThread {
+            Toast.makeText(
+                this,
+                message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 }
