@@ -3,9 +3,24 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="50dp"
-    android:layout_margin="10dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="10dp"
+    android:layout_marginEnd="10dp"
+    android:layout_marginBottom="10dp"
     android:background="@drawable/custom_checkbox">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imagePreview"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="@drawable/rounded_top_background_grey"
+        android:scaleType="center"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/circleImageView"
+        app:srcCompat="@android:drawable/ic_menu_gallery" />
 
     <TextView
         android:id="@+id/attachment_icon"
@@ -15,24 +30,25 @@
         android:background="@drawable/ic_file"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/imagePreview" />
 
     <TextView
         android:id="@+id/attachment_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="15dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="5dp"
         android:layout_marginEnd="15dp"
         app:layout_constraintEnd_toStartOf="@+id/attachment_delete_button"
         app:layout_constraintStart_toEndOf="@+id/attachment_icon"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/imagePreview" />
 
     <TextView
         android:id="@+id/attachment_size"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="15dp"
+        android:layout_marginBottom="5dp"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/attachment_icon"
@@ -43,10 +59,10 @@
         style="@style/Widget.AppCompat.Button.Borderless"
         android:layout_width="25dp"
         android:layout_height="25dp"
-        android:layout_marginRight="15dp"
+        android:layout_marginEnd="15dp"
         android:background="@drawable/ic_close"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/imagePreview" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

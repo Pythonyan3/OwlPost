@@ -19,6 +19,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.models.*
 import com.example.owlpost.ui.ColorSpinnerAdapter
@@ -29,33 +30,47 @@ import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 
 
+private const val PERMISSIONS_REQUEST_CODE = 1
+private const val PICK_FILE_REQUEST_CODE = 2
+
+
 class SendMail : AppCompatActivity() {
     private val settings = Settings()
     private lateinit var currentUser: User
     private lateinit var foregroundColors: Array<Int>
     private lateinit var backgroundColors: Array<Int>
-    private val attachments = ArrayList<UriWrapper>()
-    private val PERMISSIONS_REQUEST_CODE = 1
-    private val PICK_FILE_REQUEST_CODE = 2
+    private lateinit var attachments: Attachments
     private var attachFileJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_send_mail)
-        initVariables()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        initFields()
         initViewsListeners()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_FILE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null){
+        if (requestCode == PICK_FILE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
             attachFileJob = CoroutineScope(Dispatchers.IO).launch {
-                val attachment = getAttachment(data)
-                if (attachment != null){
+                try {
+                    val attachment = getAttachment(data)
                     attachments.add(attachment)
-                    runOnUiThread{
+                    runOnUiThread {
                         attachmentsRecycleView.adapter?.notifyDataSetChanged()
                     }
+                } catch (e: UriSchemeException) {
+                    shortToast(getString(R.string.cant_attach_msg))
+                } catch (e: FileNotFoundException) {
+                    shortToast(getString(R.string.cant_attach_msg))
+                } catch (e: FileSizeException) {
+                    e.message?.let { shortToast(it) }
+                } catch (e: AttachmentsSizeException) {
+                    e.message?.let { shortToast(it) }
                 }
             }
         }
@@ -70,14 +85,17 @@ class SendMail : AppCompatActivity() {
         showFilePickerIntent()
     }
 
-    private fun initVariables() {
-        foregroundColors = this.resources.getIntArray(R.array.foregroundColors).toList().toTypedArray()
-        backgroundColors = this.resources.getIntArray(R.array.backgroundColors).toList().toTypedArray()
+    private fun initFields() {
+        foregroundColors =
+            this.resources.getIntArray(R.array.foregroundColors).toList().toTypedArray()
+        backgroundColors =
+            this.resources.getIntArray(R.array.backgroundColors).toList().toTypedArray()
+        attachments = Attachments(this)
         //settings.init(this)
         //currentUser = settings.getCurrentUser()
     }
 
-    private fun initViewsListeners(){
+    private fun initViewsListeners() {
         attachmentsRecycleView.layoutManager = LinearLayoutManager(this@SendMail)
         attachmentsRecycleView.adapter = RecyclerAttachmentsAdapter(attachments)
 
@@ -85,18 +103,18 @@ class SendMail : AppCompatActivity() {
             this.finish()
         }
 
-        doEcp.setOnCheckedChangeListener{ checkbox: CompoundButton, state: Boolean ->
+        doEcp.setOnCheckedChangeListener { _: CompoundButton, state: Boolean ->
             if (state)
                 Toast.makeText(this, "ЭЦП письма включена", Toast.LENGTH_SHORT).show()
         }
 
-        doEncrypt.setOnCheckedChangeListener{ checkbox: CompoundButton, state: Boolean ->
+        doEncrypt.setOnCheckedChangeListener { _: CompoundButton, state: Boolean ->
             if (state)
                 Toast.makeText(this, "Шифрование письма включено", Toast.LENGTH_SHORT).show()
         }
 
-        showFormatPanel.setOnCheckedChangeListener{ it: CompoundButton, state: Boolean ->
-            bottom_panel.visibility = if (state) View.VISIBLE else View.GONE
+        showFormatPanel.setOnCheckedChangeListener { _: CompoundButton, state: Boolean ->
+            formattingPanel.visibility = if (state) View.VISIBLE else View.GONE
         }
 
         attach_button.setOnClickListener {
@@ -105,14 +123,13 @@ class SendMail : AppCompatActivity() {
                     Manifest.permission.READ_EXTERNAL_STORAGE
                 )
                 != PackageManager.PERMISSION_GRANTED
-            ){
+            ) {
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
                     PERMISSIONS_REQUEST_CODE
                 )
-            }
-            else{
+            } else {
                 showFilePickerIntent()
             }
         }
@@ -121,36 +138,36 @@ class SendMail : AppCompatActivity() {
             Toast.makeText(this, "SENDING MAIL", Toast.LENGTH_SHORT).show()
         }
 
-        messageBody.setOnFocusChangeListener{ view: View, isFocused: Boolean ->
+        messageBody.setOnFocusChangeListener { _: View, isFocused: Boolean ->
             if (isFocused)
                 showFormatPanel.isEnabled = true
-            else{
+            else {
                 showFormatPanel.isEnabled = false
                 showFormatPanel.isChecked = false
             }
         }
 
-        messageBody.onSelectionChangedListener = object: OnSelectionChangedListener {
+        messageBody.onSelectionChangedListener = object : OnSelectionChangedListener {
             override fun onSelectionChanged(selectionStart: Int, selectionEnd: Int) {
                 updateFormattingPanel(selectionStart, selectionEnd)
             }
         }
 
-        bold_checkbox.setOnClickListener{
+        bold_checkbox.setOnClickListener {
             if ((it as CheckBox).isChecked)
                 setMessageSpan(StyleSpan(Typeface.BOLD))
             else
                 removeMessageSpan(StyleSpan(Typeface.BOLD))
         }
 
-        italic_checkbox.setOnClickListener{
+        italic_checkbox.setOnClickListener {
             if ((it as CheckBox).isChecked)
                 setMessageSpan(StyleSpan(Typeface.ITALIC))
             else
                 removeMessageSpan(StyleSpan(Typeface.ITALIC))
         }
 
-        underline_checkbox.setOnClickListener{
+        underline_checkbox.setOnClickListener {
             if ((it as CheckBox).isChecked)
                 setMessageSpan(UnderlineSpan())
             else
@@ -167,34 +184,36 @@ class SendMail : AppCompatActivity() {
         }
 
         font_color_spinner.adapter = ColorSpinnerAdapter(this, foregroundColors)
-        font_color_spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
+        font_color_spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: AdapterView<*>?, v: View?, position: Int, id: Long) {
                 if (position == 0)
                     removeMessageSpan(ForegroundColorSpan(foregroundColors[position]))
                 else
                     setMessageSpan(ForegroundColorSpan(foregroundColors[position]))
             }
+
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         fill_color_spinner.adapter = ColorSpinnerAdapter(this, backgroundColors)
-        fill_color_spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
+        fill_color_spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: AdapterView<*>?, v: View?, position: Int, id: Long) {
                 if (position == 0)
                     removeMessageSpan(BackgroundColorSpan(foregroundColors[position]))
                 else
                     setMessageSpan(BackgroundColorSpan(backgroundColors[position]))
             }
+
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         close_format_panel_btn.setOnClickListener {
             showFormatPanel.isChecked = false
-            bottom_panel.visibility = View.GONE
+            formattingPanel.visibility = View.GONE
         }
     }
 
-    private fun setMessageSpan(span: ParcelableSpan){
+    private fun setMessageSpan(span: ParcelableSpan) {
         if (messageBody.isFocused)
             setSpan(
                 messageBody.text as SpannableStringBuilder,
@@ -204,7 +223,7 @@ class SendMail : AppCompatActivity() {
             )
     }
 
-    private fun removeMessageSpan(span: ParcelableSpan){
+    private fun removeMessageSpan(span: ParcelableSpan) {
         if (messageBody.isFocused)
             removeSpan(
                 messageBody.text as SpannableStringBuilder,
@@ -214,37 +233,50 @@ class SendMail : AppCompatActivity() {
             )
     }
 
+    /**
+     * Updates UI elements states on Formatting Panel according to selection in message body edit
+     * Update states of checkbox (Bold, Italic, Underline)
+     * Update background colors of foreground and background colors spinners
+     */
     private fun updateFormattingPanel(selectionStart: Int, selectionEnd: Int) {
-        var foregroundIndex = 0; var backgroundIndex = 0
-        var isBold = false; var isItalic = false; var isUnderline = false
-        val builder = (messageBody.text as SpannableStringBuilder)
-        val spans = builder.getSpans(selectionStart, selectionEnd, ParcelableSpan::class.java)
+        if (formattingPanel.isVisible){
+            var foregroundIndex = 0
+            var backgroundIndex = 0
+            var isBold = false
+            var isItalic = false
+            var isUnderline = false
+            val builder = (messageBody.text as SpannableStringBuilder)
+            val spans = builder.getSpans(selectionStart, selectionEnd, ParcelableSpan::class.java)
 
-        for (span in spans){
-            if (span is StyleSpan){
-                if (span.style == Typeface.BOLD)
-                    isBold = true
-                else if (span.style == Typeface.ITALIC)
-                    isItalic = true
+            for (span in spans) {
+                if (span is StyleSpan) {
+                    if (span.style == Typeface.BOLD)
+                        isBold = true
+                    else if (span.style == Typeface.ITALIC)
+                        isItalic = true
+                } else if (span is UnderlineSpan)
+                    isUnderline = true
+                else if (span is ForegroundColorSpan)
+                    foregroundIndex = foregroundColors.indexOf(span.foregroundColor)
+                else if (span is BackgroundColorSpan)
+                    backgroundIndex = backgroundColors.indexOf(span.backgroundColor)
             }
-            else if(span is UnderlineSpan)
-                isUnderline = true
-            else if (span is ForegroundColorSpan)
-                foregroundIndex = foregroundColors.indexOf(span.foregroundColor)
-            else if (span is BackgroundColorSpan)
-                backgroundIndex = backgroundColors.indexOf(span.backgroundColor)
+            bold_checkbox.isChecked = isBold; italic_checkbox.isChecked = isItalic
+            underline_checkbox.isChecked = isUnderline
+
+            val foregroundSpinnerView = font_color_spinner.findViewById<TextView>(R.id.color_view)
+            foregroundSpinnerView.setBackgroundColor(setTransparent(foregroundColors[foregroundIndex]))
+
+            val backgroundSpinnerView = fill_color_spinner.findViewById<TextView>(R.id.color_view)
+            backgroundSpinnerView.setBackgroundColor(setTransparent(backgroundColors[backgroundIndex]))
         }
-        bold_checkbox.isChecked = isBold; italic_checkbox.isChecked = isItalic
-        underline_checkbox.isChecked = isUnderline
-
-        val foregroundSpinnerView = (font_color_spinner.findViewById(R.id.color_view) as TextView)
-        foregroundSpinnerView.setBackgroundColor(setTransparent(foregroundColors[foregroundIndex]))
-
-        val backgroundSpinnerView = (fill_color_spinner.findViewById(R.id.color_view) as TextView)
-        backgroundSpinnerView.setBackgroundColor(setTransparent(backgroundColors[backgroundIndex]))
     }
 
-    private fun showFilePickerIntent(){
+    /**
+     * Shows file chooser intent
+     * Intent selects all of file types
+     */
+    private fun showFilePickerIntent() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
         intent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -254,26 +286,23 @@ class SendMail : AppCompatActivity() {
         )
     }
 
-    private fun getAttachment(data: Intent): UriWrapper?{
-        try{
-            val uri = UriWrapper(data.data as Uri, this@SendMail)
-            val fis = uri.getInputStream() ?: throw FileNotFoundException("")
-            fis.close()
-            return uri
-        }
-        catch (e: UriSchemeException){
-            shortToast("Не удалось прикрепить файл.")
-        }
-        catch (e: FileNotFoundException){
-            shortToast("Не удалось прикрепить файл.")
-        }
-        catch (e: FileSizeException) {
-            shortToast("Размер файла не должен превышать 25Мб.")
-        }
-        return null
+    /**
+     * Makes an instance of UriWrapper
+     * Gets some data by uri (filename, size)
+     * Try to open InputStream
+     */
+    private fun getAttachment(data: Intent): UriWrapper {
+        val uri = UriWrapper(data.data as Uri, this@SendMail)
+        val fis = uri.getInputStream() ?: throw FileNotFoundException("")
+        fis.close()
+        return uri
     }
 
-    private fun shortToast(message: String){
+    /**
+     * Shows Toast in UiThread
+     * Function used in coroutines
+     */
+    private fun shortToast(message: String) {
         runOnUiThread {
             Toast.makeText(
                 this,

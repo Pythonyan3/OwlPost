@@ -1,10 +1,30 @@
 <resources>
     <string name="app_name">OwlPost</string>
 
-    <!-- Send activity. Email form -->
-    <string name="to_hint">Получатель</string>
-    <string name="subject_hint">Тема сообщения</string>
-    <string name="message_body_hint">Сообщение</string>
+    <!--Send Mail Activity-->
+    <!--Mail Fields Hints-->
+    <string name="to_hint">To</string>
+    <string name="subject_hint">Subject</string>
+    <string name="message_body_hint">Text here…</string>
+
+    <!--Toasts messages-->
+    <string name="cant_attach_msg">Couldn\'t attach file</string>
+    <string name="sign_msg">Digital signature is enabled</string>
+    <string name="encryption_msg">Encryption is enabled</string>
+
+    <!--Exceptions messages-->
+    <string name="attachment_size">File exceed total attachments size %1$dMb</string>
+    <string name="total_attachments_size">Total attachments size shouldn\'t exceed %1$dMb</string>
+    <string name="uri_scheme">Don\'t support current uri scheme %1$sMb</string>
+
+    <!--Main Activity-->
+    <!--Drawer Menu Items-->
+    <string name="inbox_item">Inbox</string>
+    <string name="sent_item">Sent</string>
+    <string name="drafts_item">Drafts</string>
+    <string name="trash_item">Trash</string>
+    <string name="settings_item">Settings</string>
+
 
     <integer-array name="foregroundColors">
         <item>@color/formattingBlack</item>

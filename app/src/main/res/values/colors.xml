@@ -4,6 +4,8 @@
     <color name="colorPrimaryDark">#e39c34</color>
     <color name="colorAccent">#efc384</color>
 
+    <color name="imagePreviewBackground">#D3D1D1</color>
+
     <color name="formattingWhite">#FFFFFF</color>
     <color name="formattingBlack">#000000</color>
     <color name="formattingRed">#FF0000</color>

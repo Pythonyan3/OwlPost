@@ -119,7 +119,7 @@
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_panel"
+        app:layout_constraintBottom_toTopOf="@+id/formattingPanel"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbar">
@@ -183,13 +183,13 @@
     </ScrollView>
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/bottom_panel"
+        android:id="@+id/formattingPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/formatting_panel_top_line"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">

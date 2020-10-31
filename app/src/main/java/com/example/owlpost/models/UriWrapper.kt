@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
+import com.example.owlpost.R
 import java.io.File
 import java.io.InputStream
 import java.net.URI
@@ -15,6 +16,7 @@ class UriWrapper(val uri: Uri, private val context: Context) {
 
     var filename: String = ""
     var size: Long = 0L
+    val type: String = context.contentResolver.getType(uri) ?: ""
 
     init {
         when (uri.scheme) {
@@ -43,10 +45,13 @@ class UriWrapper(val uri: Uri, private val context: Context) {
                 size = file.length()
             }
             else -> {
-                throw UriSchemeException("Don't support current uri scheme (${uri.scheme})")
+                throw UriSchemeException(context.getString(R.string.uri_scheme, uri.scheme))
             }
         }
-        if (size / 1000000.0f > 25) throw FileSizeException("File is too big. Maximum size is 25Mb")
+        if (size / 1000000.0f > 25)
+            throw FileSizeException(
+                context.getString(R.string.attachment_size, MAX_ATTACHMENTS_SIZE_MB)
+            )
     }
 
     fun getInputStream(): InputStream? {
