@@ -16,7 +16,11 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup">
-        <activity android:name=".MainActivity" />
+
+        <activity
+            android:name=".MainActivity"
+            android:theme="@style/MainActivityTheme"/>
+
         <activity
             android:name=".SplashScreen"
             android:theme="@style/AppTheme">
@@ -26,10 +30,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
-            android:name=".SendMail"
-            android:windowSoftInputMode="stateHidden|adjustResize" />
-        <activity android:name=".LoginActivity" />
+            android:name=".SendMailActivity"
+            android:windowSoftInputMode="stateHidden|adjustResize"
+            android:theme="@style/AppTheme"/>
+
+        <activity
+            android:name=".LoginActivity"
+            android:theme="@style/AppTheme"/>
     </application>
 
 </manifest>

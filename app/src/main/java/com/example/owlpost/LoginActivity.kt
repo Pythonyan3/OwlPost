@@ -19,7 +19,7 @@ class LoginActivity : AppCompatActivity() {
         login_button.setOnClickListener{
             if (isValidEmail(user_email.text.toString())){
 
-                startActivity(Intent(this, SendMail::class.java))
+                startActivity(Intent(this, SendMailActivity::class.java))
                 this.finish()
             }
             else

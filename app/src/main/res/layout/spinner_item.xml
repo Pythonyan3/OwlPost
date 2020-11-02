@@ -9,5 +9,5 @@
         android:layout_margin="5dp"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:background="@drawable/color_spinner_item"/>
+        android:background="@drawable/oval_background_light"/>
 </LinearLayout>

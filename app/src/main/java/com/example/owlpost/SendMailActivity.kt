@@ -6,7 +6,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Typeface
-import android.net.Uri
 import android.os.Bundle
 import android.text.ParcelableSpan
 import android.text.SpannableStringBuilder
@@ -22,19 +21,20 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.models.*
-import com.example.owlpost.ui.ColorSpinnerAdapter
-import com.example.owlpost.ui.OnSelectionChangedListener
-import com.example.owlpost.ui.RecyclerAttachmentsAdapter
+import com.example.owlpost.ui.*
 import kotlinx.android.synthetic.main.activity_send_mail.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 
 
-private const val PERMISSIONS_REQUEST_CODE = 1
-private const val PICK_FILE_REQUEST_CODE = 2
+const val PERMISSIONS_REQUEST_CODE = 1
+const val PICK_FILE_REQUEST_CODE = 2
 
 
-class SendMail : AppCompatActivity() {
+class SendMailActivity : AppCompatActivity() {
     private val settings = Settings()
     private lateinit var currentUser: User
     private lateinit var foregroundColors: Array<Int>
@@ -45,10 +45,6 @@ class SendMail : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_send_mail)
-    }
-
-    override fun onStart() {
-        super.onStart()
         initFields()
         initViewsListeners()
     }
@@ -96,30 +92,40 @@ class SendMail : AppCompatActivity() {
     }
 
     private fun initViewsListeners() {
-        attachmentsRecycleView.layoutManager = LinearLayoutManager(this@SendMail)
+        attachmentsRecycleView.layoutManager = LinearLayoutManager(this@SendMailActivity)
         attachmentsRecycleView.adapter = RecyclerAttachmentsAdapter(attachments)
 
-        back_button.setOnClickListener {
-            this.finish()
+        setSupportActionBar(sendmail_toolbar)
+
+        sendmail_toolbar.setNavigationOnClickListener {
+            this@SendMailActivity.finish()
         }
 
         doEcp.setOnCheckedChangeListener { _: CompoundButton, state: Boolean ->
             if (state)
-                Toast.makeText(this, "ЭЦП письма включена", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@SendMailActivity,
+                    getString(R.string.sign_msg),
+                    Toast.LENGTH_SHORT
+                ).show()
         }
 
         doEncrypt.setOnCheckedChangeListener { _: CompoundButton, state: Boolean ->
             if (state)
-                Toast.makeText(this, "Шифрование письма включено", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@SendMailActivity,
+                    getString(R.string.encryption_msg),
+                    Toast.LENGTH_SHORT
+                ).show()
         }
 
         showFormatPanel.setOnCheckedChangeListener { _: CompoundButton, state: Boolean ->
-            formattingPanel.visibility = if (state) View.VISIBLE else View.GONE
+            formatting_panel.visibility = if (state) View.VISIBLE else View.GONE
         }
 
         attach_button.setOnClickListener {
             if (ContextCompat.checkSelfPermission(
-                    this@SendMail,
+                    this@SendMailActivity,
                     Manifest.permission.READ_EXTERNAL_STORAGE
                 )
                 != PackageManager.PERMISSION_GRANTED
@@ -130,7 +136,7 @@ class SendMail : AppCompatActivity() {
                     PERMISSIONS_REQUEST_CODE
                 )
             } else {
-                showFilePickerIntent()
+                this.showFilePickerIntent()
             }
         }
 
@@ -209,7 +215,7 @@ class SendMail : AppCompatActivity() {
 
         close_format_panel_btn.setOnClickListener {
             showFormatPanel.isChecked = false
-            formattingPanel.visibility = View.GONE
+            formatting_panel.visibility = View.GONE
         }
     }
 
@@ -239,7 +245,7 @@ class SendMail : AppCompatActivity() {
      * Update background colors of foreground and background colors spinners
      */
     private fun updateFormattingPanel(selectionStart: Int, selectionEnd: Int) {
-        if (formattingPanel.isVisible){
+        if (formatting_panel.isVisible){
             var foregroundIndex = 0
             var backgroundIndex = 0
             var isBold = false
@@ -269,46 +275,6 @@ class SendMail : AppCompatActivity() {
 
             val backgroundSpinnerView = fill_color_spinner.findViewById<TextView>(R.id.color_view)
             backgroundSpinnerView.setBackgroundColor(setTransparent(backgroundColors[backgroundIndex]))
-        }
-    }
-
-    /**
-     * Shows file chooser intent
-     * Intent selects all of file types
-     */
-    private fun showFilePickerIntent() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.type = "*/*"
-        intent.addCategory(Intent.CATEGORY_OPENABLE)
-        startActivityForResult(
-            Intent.createChooser(intent, "Выберите файл"),
-            PICK_FILE_REQUEST_CODE
-        )
-    }
-
-    /**
-     * Makes an instance of UriWrapper
-     * Gets some data by uri (filename, size)
-     * Try to open InputStream
-     */
-    private fun getAttachment(data: Intent): UriWrapper {
-        val uri = UriWrapper(data.data as Uri, this@SendMail)
-        val fis = uri.getInputStream() ?: throw FileNotFoundException("")
-        fis.close()
-        return uri
-    }
-
-    /**
-     * Shows Toast in UiThread
-     * Function used in coroutines
-     */
-    private fun shortToast(message: String) {
-        runOnUiThread {
-            Toast.makeText(
-                this,
-                message,
-                Toast.LENGTH_SHORT
-            ).show()
         }
     }
 }
