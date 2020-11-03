@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">OwlPost</string>
 
+    <!--Add Mail Activity-->
+    <string name="empty_fields">Enter all of required data</string>
+    <string name="incorrect_email">Email address is incorrect</string>
+
     <!--Send Mail Activity-->
     <!--Mail Fields Hints-->
     <string name="to_hint">To</string>
@@ -16,6 +20,9 @@
     <string name="attachment_size">File exceed total attachments size %1$dMb</string>
     <string name="total_attachments_size">Total attachments size shouldn\'t exceed %1$dMb</string>
     <string name="uri_scheme">Don\'t support current uri scheme %1$sMb</string>
+    <string name="email_already_exists">Entered email already exists</string>
+    <string name="active_user_doesnt_exist">Active users doesn\'t exist</string>
+    <string name="user_password_not_found">User\'s password not found</string>
 
     <!--Main Activity-->
     <!--Drawer Menu Items Names (mailboxes)-->
@@ -24,6 +31,7 @@
     <string name="drafts_item">Drafts</string>
     <string name="trash_item">Trash</string>
     <string name="new_email_item">Add Email</string>
+    <string name="remove_item">Remove Email</string>
     <string name="settings_item">Settings</string>
 
     <!--Drawer Menu Items Tags to identity mailbox-->
@@ -33,7 +41,6 @@
         <item name="drafts_item">drafts</item>
         <item name="trash_item">trash</item>
     </string-array>
-
 
     <integer-array name="foregroundColors">
         <item>@color/formattingBlack</item>
@@ -52,6 +59,7 @@
         <item>@color/formattingYellow</item>
         <item>@color/formattingGrey</item>
     </integer-array>
+
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 

@@ -4,10 +4,14 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.owlpost.PICK_FILE_REQUEST_CODE
 import com.example.owlpost.SendMailActivity
 import com.example.owlpost.models.UriWrapper
 import java.io.FileNotFoundException
+
+
+const val PERMISSIONS_REQUEST_CODE = 1
+const val PICK_FILE_REQUEST_CODE = 2
+const val ADD_EMAIL_REQUEST_CODE = 3
 
 
 /**

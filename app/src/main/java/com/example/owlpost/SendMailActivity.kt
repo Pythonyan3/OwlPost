@@ -30,12 +30,8 @@ import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 
 
-const val PERMISSIONS_REQUEST_CODE = 1
-const val PICK_FILE_REQUEST_CODE = 2
-
-
 class SendMailActivity : AppCompatActivity() {
-    private val settings = Settings()
+    private lateinit var settings: Settings
     private lateinit var currentUser: User
     private lateinit var foregroundColors: Array<Int>
     private lateinit var backgroundColors: Array<Int>
@@ -82,6 +78,7 @@ class SendMailActivity : AppCompatActivity() {
     }
 
     private fun initFields() {
+        settings = Settings(this)
         foregroundColors =
             this.resources.getIntArray(R.array.foregroundColors).toList().toTypedArray()
         backgroundColors =

@@ -1,17 +1,15 @@
 package com.example.owlpost.ui
 
 import android.content.Intent
-import android.content.res.Resources
 import android.view.View
-import android.widget.Toolbar
-import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.res.ResourcesCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import com.example.owlpost.LoginActivity
-import com.example.owlpost.MainActivity
+import com.example.owlpost.AddEmailActivity
 import com.example.owlpost.R
-import com.example.owlpost.SendMailActivity
 import com.example.owlpost.fragments.SettingsFragment
+import com.example.owlpost.models.Settings
+import com.example.owlpost.models.SettingsException
 import com.mikepenz.materialdrawer.AccountHeader
 import com.mikepenz.materialdrawer.AccountHeaderBuilder
 import com.mikepenz.materialdrawer.Drawer
@@ -20,14 +18,24 @@ import com.mikepenz.materialdrawer.model.DividerDrawerItem
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem
 import com.mikepenz.materialdrawer.model.ProfileDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
+import com.mikepenz.materialdrawer.model.interfaces.IProfile
 
 class MailDrawer(private val activity: AppCompatActivity, private val toolbar: androidx.appcompat.widget.Toolbar){
     private lateinit var drawer: Drawer
     private lateinit var header: AccountHeader
+    private var settings: Settings = Settings(activity)
+    private val icons = arrayOf(
+        ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_1, null),
+        ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_2, null),
+        ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_3, null),
+        ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_4, null),
+        ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_5, null)
+    )
 
     fun createDrawer(){
         buildHeader()
         buildDrawer()
+        refreshHeader()
     }
 
     fun disableDrawer(){
@@ -57,29 +65,45 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: a
             toolbar.title = activity.getString(titleRes)
     }
 
+    fun refreshHeader(){
+        try {
+            val activeUser = settings.getActiveUser()
+            val users = settings.usersList()
+            header.clear()
+            for (i in users.indices){
+                header.addProfiles(ProfileDrawerItem()
+                    .withIdentifier(i.toLong())
+                    .withName(users.elementAt(i))
+                    .withIcon(icons[i % icons.size])
+                )
+            }
+            header.setActiveProfile(users.indexOf(activeUser.email).toLong())
+        }
+        catch (e: SettingsException){
+            startAddEmailActivity()
+        }
+    }
+
     private fun buildHeader() {
         header = AccountHeaderBuilder()
             .withActivity(activity)
             .withHeaderBackground(R.drawable.drawer_header)
-            .addProfiles(
-                ProfileDrawerItem()
-                    .withName("email1")
-                    .withIcon(R.drawable.ic_user_icon_1),
-                ProfileDrawerItem()
-                    .withName("email2")
-                    .withIcon(R.drawable.ic_user_icon_2),
-                ProfileDrawerItem()
-                    .withName("email3")
-                    .withIcon(R.drawable.ic_user_icon_3),
-                ProfileDrawerItem()
-                    .withName("email4")
-                    .withIcon(R.drawable.ic_user_icon_4),
-                ProfileDrawerItem()
-                    .withName("email5")
-                    .withIcon(R.drawable.ic_user_icon_5)
-            )
+            .withOnAccountHeaderListener(object: AccountHeader.OnAccountHeaderListener{
+                override fun onProfileChanged(
+                    view: View?,
+                    profile: IProfile<*>,
+                    current: Boolean
+                ): Boolean {
+                    println("here")
+                    val email = profile.name?.text as String
+                    settings.setActiveUser(email)
+                    return false
+                }
+
+            })
             .build()
     }
+
 
     private fun buildDrawer() {
         drawer = DrawerBuilder()
@@ -117,6 +141,11 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: a
                     .withIcon(R.drawable.ic_add_user),
                 PrimaryDrawerItem().withIdentifier(6)
                     .withIconTintingEnabled(true)
+                    .withName(R.string.remove_item)
+                    .withSelectable(false)
+                    .withIcon(R.drawable.ic_remove_user),
+                PrimaryDrawerItem().withIdentifier(7)
+                    .withIconTintingEnabled(true)
                     .withName(R.string.settings_item)
                     .withSelectable(false)
                     .withIcon(R.drawable.ic_settings)
@@ -131,9 +160,9 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: a
                             this@MailDrawer.refreshTitle()
                         }
                         5 -> {
-                            activity.startActivity(Intent(activity, LoginActivity::class.java))
+                            startAddEmailActivity()
                         }
-                        6 ->  {
+                        7 ->  {
                             activity.supportFragmentManager.beginTransaction()
                                 .addToBackStack(null)
                                 .replace(R.id.fragment_container, SettingsFragment(this@MailDrawer))
@@ -145,6 +174,11 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: a
                 }
             })
             .build()
+    }
+
+    private fun startAddEmailActivity(){
+        val intent = Intent(activity, AddEmailActivity::class.java)
+        activity.startActivityForResult(intent, ADD_EMAIL_REQUEST_CODE)
     }
 
 }
