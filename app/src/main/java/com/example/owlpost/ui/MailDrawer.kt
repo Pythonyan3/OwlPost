@@ -3,6 +3,7 @@ package com.example.owlpost.ui
 import android.content.Intent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.res.ResourcesCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.example.owlpost.AddEmailActivity
@@ -10,6 +11,7 @@ import com.example.owlpost.R
 import com.example.owlpost.fragments.SettingsFragment
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.SettingsException
+import com.example.owlpost.models.User
 import com.mikepenz.materialdrawer.AccountHeader
 import com.mikepenz.materialdrawer.AccountHeaderBuilder
 import com.mikepenz.materialdrawer.Drawer
@@ -20,7 +22,7 @@ import com.mikepenz.materialdrawer.model.ProfileDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IProfile
 
-class MailDrawer(private val activity: AppCompatActivity, private val toolbar: androidx.appcompat.widget.Toolbar){
+class MailDrawer(private val activity: AppCompatActivity, private val toolbar: Toolbar){
     private lateinit var drawer: Drawer
     private lateinit var header: AccountHeader
     private var settings: Settings = Settings(activity)
@@ -94,7 +96,6 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: a
                     profile: IProfile<*>,
                     current: Boolean
                 ): Boolean {
-                    println("here")
                     val email = profile.name?.text as String
                     settings.setActiveUser(email)
                     return false
@@ -116,22 +117,18 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: a
                 PrimaryDrawerItem().withIdentifier(0)
                     .withIconTintingEnabled(true)
                     .withName(R.string.inbox_item)
-                    .withSelectable(true)
                     .withIcon(R.drawable.ic_mail),
                 PrimaryDrawerItem().withIdentifier(1)
                     .withIconTintingEnabled(true)
                     .withName(R.string.sent_item)
-                    .withSelectable(true)
                     .withIcon(R.drawable.ic_send),
                 PrimaryDrawerItem().withIdentifier(2)
                     .withIconTintingEnabled(true)
                     .withName(R.string.drafts_item)
-                    .withSelectable(true)
                     .withIcon(R.drawable.ic_drafts),
                 PrimaryDrawerItem().withIdentifier(3)
                     .withIconTintingEnabled(true)
                     .withName(R.string.trash_item)
-                    .withSelectable(true)
                     .withIcon(R.drawable.ic_trash),
                 DividerDrawerItem(),
                 PrimaryDrawerItem().withIdentifier(5)
@@ -157,12 +154,22 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: a
                 ): Boolean {
                     when (drawerItem.identifier.toInt()){
                         in 0..3 -> {
+                            // Mailboxes item click
                             this@MailDrawer.refreshTitle()
                         }
                         5 -> {
+                            // Add email item click
                             startAddEmailActivity()
                         }
+                        6 -> {
+                            val profile = header.activeProfile
+                            val email = profile?.name?.text as String
+                            settings.removeUser(email)
+                            header.removeProfile(profile)
+                            refreshHeader()
+                        }
                         7 ->  {
+                            // Settings item click
                             activity.supportFragmentManager.beginTransaction()
                                 .addToBackStack(null)
                                 .replace(R.id.fragment_container, SettingsFragment(this@MailDrawer))
@@ -180,5 +187,4 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: a
         val intent = Intent(activity, AddEmailActivity::class.java)
         activity.startActivityForResult(intent, ADD_EMAIL_REQUEST_CODE)
     }
-
 }

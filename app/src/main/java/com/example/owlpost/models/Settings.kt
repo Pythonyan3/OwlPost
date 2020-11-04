@@ -32,6 +32,12 @@ class Settings(private val context: Context) {
         editor.apply()
     }
 
+    private fun resetActiveUser(){
+        val editor = usersInfoSettings.edit()
+        editor.remove(ACTIVE_USER_STRING_KEY)
+        editor.apply()
+    }
+
     fun getActiveUser(): User {
         var email = usersInfoSettings.getString(ACTIVE_USER_STRING_KEY, null)
         val users = usersList()
@@ -42,6 +48,7 @@ class Settings(private val context: Context) {
         }
         val settings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
         val password = settings.getString(USER_PASSWORD_STRING_KEY, null)
+        setActiveUser(email)
         return User(email, password!!)
     }
 
@@ -56,12 +63,11 @@ class Settings(private val context: Context) {
 
         // write user's password and new key pairs to own settings file
         val newUserSettings = context.getSharedPreferences(user.email, Context.MODE_PRIVATE)
-
+        val userEditor = newUserSettings.edit()
+        userEditor.putString(USER_PASSWORD_STRING_KEY, user.password)
         // check if already have keys
         if (newUserSettings.getString(PUBLIC_ENCRYPT_STRING_KEY, null) == null){
             val cipher = CipherWrapper()
-            val userEditor = newUserSettings.edit()
-            userEditor.putString(USER_PASSWORD_STRING_KEY, user.password)
             // encryption key pair
             var keyPair = cipher.generateKeysPair()
             var base64PublicKey = cipher.encodeKey(keyPair.public)
@@ -74,17 +80,29 @@ class Settings(private val context: Context) {
             base64PrivateKey = cipher.encodeKey(keyPair.private)
             userEditor.putString(PUBLIC_SIGN_STRING_KEY, base64PublicKey)
             userEditor.putString(PRIVATE_SIGN_STRING_KEY, base64PrivateKey)
-            userEditor.apply()
         }
+        userEditor.apply()
     }
 
-    fun removeUser(user: User){
+    fun removeUser(email: String, reset: Boolean = false){
+        // Remove from users list
+        val activeUser = getActiveUser()
+        if (activeUser.email == email)
+            resetActiveUser()
         val users = usersList()
-        val newUserSettings = context.getSharedPreferences(user.email, Context.MODE_PRIVATE)
+        users.remove(email)
+        writeUsersList(users)
+        // Remove user password
+        val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
         val userEditor = newUserSettings.edit()
         userEditor.remove(USER_PASSWORD_STRING_KEY)
-        users.remove(user.email)
-        writeUsersList(users)
+        // reset user's keys
+        if (reset){
+            userEditor.remove(PUBLIC_ENCRYPT_STRING_KEY)
+            userEditor.remove(PRIVATE_ENCRYPT_STRING_KEY)
+            userEditor.remove(PUBLIC_SIGN_STRING_KEY)
+            userEditor.remove(PRIVATE_SIGN_STRING_KEY)
+        }
         userEditor.apply()
     }
 

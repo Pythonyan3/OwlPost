@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.owlpost.SendMailActivity
 import com.example.owlpost.models.UriWrapper
+import kotlinx.android.synthetic.main.activity_login.*
 import java.io.FileNotFoundException
 
 
@@ -51,5 +52,17 @@ fun AppCompatActivity.shortToast(message: String){
             message,
             Toast.LENGTH_SHORT
         ).show()
+    }
+}
+
+fun AppCompatActivity.showLoading(loadingDialog: LoadingDialog){
+    runOnUiThread{
+        loadingDialog.show()
+    }
+}
+
+fun AppCompatActivity.hideLoading(loadingDialog: LoadingDialog){
+    runOnUiThread {
+        loadingDialog.dismiss()
     }
 }

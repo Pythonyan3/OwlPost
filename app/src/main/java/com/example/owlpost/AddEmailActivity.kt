@@ -1,17 +1,25 @@
 package com.example.owlpost
 
-import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.app.ProgressDialog
 import android.os.Bundle
-import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.SettingsException
 import com.example.owlpost.models.User
+import com.example.owlpost.ui.LoadingDialog
+import com.example.owlpost.ui.hideLoading
 import com.example.owlpost.ui.shortToast
+import com.example.owlpost.ui.showLoading
 import kotlinx.android.synthetic.main.activity_login.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+
 
 class AddEmailActivity : AppCompatActivity() {
     private lateinit var setting: Settings
+    private lateinit var loadingDialog: LoadingDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,6 +30,8 @@ class AddEmailActivity : AppCompatActivity() {
 
     private fun initFields() {
         setting = Settings(this)
+        loadingDialog = LoadingDialog(this)
+        loadingDialog.setTitle(getString(R.string.loading_title_add))
     }
 
     private fun initViews(){
@@ -35,13 +45,19 @@ class AddEmailActivity : AppCompatActivity() {
                 shortToast(getString(R.string.incorrect_email))
             }
             else {
-                try {
-                    setting.addUser(User(email, password))
-                    setResult(RESULT_OK)
-                    this.finish()
-                }
-                catch (e: SettingsException) {
-                    shortToast(getString(R.string.email_already_exists))
+                CoroutineScope(Dispatchers.IO).launch{
+                    try {
+                        showLoading(loadingDialog)
+                        setting.addUser(User(email, password))
+                        setResult(RESULT_OK)
+                        this@AddEmailActivity.finish()
+                    }
+                    catch (e: SettingsException) {
+                        shortToast(getString(R.string.email_already_exists))
+                    }
+                    finally {
+                        hideLoading(loadingDialog)
+                    }
                 }
             }
         }

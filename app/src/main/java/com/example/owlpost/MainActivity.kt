@@ -46,9 +46,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initViews() {
         setSupportActionBar(toolbar)
+        drawer.createDrawer()
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, MailboxFragment(drawer))
             .commit()
-        drawer.createDrawer()
     }
 }

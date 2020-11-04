@@ -36,7 +36,7 @@ class SendMailActivity : AppCompatActivity() {
     private lateinit var foregroundColors: Array<Int>
     private lateinit var backgroundColors: Array<Int>
     private lateinit var attachments: Attachments
-    private var attachFileJob: Job? = null
+    private lateinit var loadingDialog: LoadingDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,8 +48,9 @@ class SendMailActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == PICK_FILE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-            attachFileJob = CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 try {
+                    showLoading(loadingDialog)
                     val attachment = getAttachment(data)
                     attachments.add(attachment)
                     runOnUiThread {
@@ -63,6 +64,9 @@ class SendMailActivity : AppCompatActivity() {
                     e.message?.let { shortToast(it) }
                 } catch (e: AttachmentsSizeException) {
                     e.message?.let { shortToast(it) }
+                }
+                finally {
+                    hideLoading(loadingDialog)
                 }
             }
         }
@@ -79,6 +83,8 @@ class SendMailActivity : AppCompatActivity() {
 
     private fun initFields() {
         settings = Settings(this)
+        loadingDialog = LoadingDialog(this)
+        loadingDialog.setTitle(getString(R.string.loading_title_attach))
         foregroundColors =
             this.resources.getIntArray(R.array.foregroundColors).toList().toTypedArray()
         backgroundColors =

@@ -2,6 +2,13 @@
     <string name="app_name">OwlPost</string>
 
     <!--Add Mail Activity-->
+    <string name="email_hint">Email address</string>
+    <string name="password_hint">Password</string>
+    <string name="add_button_text">Add</string>
+
+    <string name="loading_title_add">Check email…</string>
+    <string name="loading_title_attach">Attaching file…</string>
+
     <string name="empty_fields">Enter all of required data</string>
     <string name="incorrect_email">Email address is incorrect</string>
 
