@@ -3,9 +3,7 @@ package com.example.owlpost.ui
 import android.app.Activity
 import android.app.AlertDialog
 import android.view.View
-import android.widget.TextView
 import com.example.owlpost.R
-import kotlinx.android.synthetic.main.activity_login.*
 import kotlinx.android.synthetic.main.loading_dialog.view.*
 
 class LoadingDialog(activity: Activity) {

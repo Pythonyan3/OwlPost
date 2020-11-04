@@ -52,6 +52,10 @@ class Settings(private val context: Context) {
         return User(email, password!!)
     }
 
+    fun isExist(user: User): Boolean{
+        return usersList().contains(user.email)
+    }
+
     fun addUser(user: User) {
         val usersList = usersList()
         if (usersList.contains(user.email))

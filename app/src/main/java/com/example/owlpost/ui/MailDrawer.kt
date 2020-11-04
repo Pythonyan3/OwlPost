@@ -7,8 +7,10 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.res.ResourcesCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.example.owlpost.AddEmailActivity
+import com.example.owlpost.MainActivity
 import com.example.owlpost.R
 import com.example.owlpost.fragments.SettingsFragment
+import com.example.owlpost.models.IMAPWrapper
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.SettingsException
 import com.example.owlpost.models.User
@@ -19,10 +21,15 @@ import com.mikepenz.materialdrawer.DrawerBuilder
 import com.mikepenz.materialdrawer.model.DividerDrawerItem
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem
 import com.mikepenz.materialdrawer.model.ProfileDrawerItem
+import com.mikepenz.materialdrawer.model.SecondaryDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IProfile
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.*
 
-class MailDrawer(private val activity: AppCompatActivity, private val toolbar: Toolbar){
+class MailDrawer(private val activity: MainActivity, private val toolbar: Toolbar, private var mailbox: String){
     private lateinit var drawer: Drawer
     private lateinit var header: AccountHeader
     private var settings: Settings = Settings(activity)
@@ -38,6 +45,7 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: T
         buildHeader()
         buildDrawer()
         refreshHeader()
+        refreshFolders()
     }
 
     fun disableDrawer(){
@@ -62,28 +70,47 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: T
 
     fun refreshTitle(){
         val drawerItem = drawer.getDrawerItem(drawer.currentSelection) as PrimaryDrawerItem
-        val titleRes = drawerItem.name?.textRes
+        val titleRes = drawerItem.name?.text
         if (titleRes != null)
-            toolbar.title = activity.getString(titleRes)
+            toolbar.title = titleRes
     }
 
     fun refreshHeader(){
-        try {
-            val activeUser = settings.getActiveUser()
-            val users = settings.usersList()
-            header.clear()
-            for (i in users.indices){
-                header.addProfiles(ProfileDrawerItem()
-                    .withIdentifier(i.toLong())
-                    .withName(users.elementAt(i))
-                    .withIcon(icons[i % icons.size])
-                )
+        val activeUser = activity.activeUser
+        val users = settings.usersList()
+        header.clear()
+        for (i in users.indices){
+            header.addProfiles(ProfileDrawerItem()
+                .withIdentifier(i.toLong())
+                .withName(users.elementAt(i))
+                .withIcon(icons[i % icons.size])
+            )
+        }
+        header.setActiveProfile(users.indexOf(activeUser.email).toLong())
+    }
+
+    private fun refreshFolders(){
+        val activeUser = activity.activeUser
+        clearFolders()
+        CoroutineScope(Dispatchers.IO).launch{
+            val imap = IMAPWrapper(activeUser.email, activeUser.password)
+            val folders = imap.folders()
+            activity.runOnUiThread {
+                for (i in folders.indices){
+                    println(folders[i].toLowerCase().capitalize())
+                    val drawerItem = PrimaryDrawerItem().withIdentifier(i.toLong())
+                        .withSelectable(true)
+                        .withName(folders[i].toLowerCase().capitalize())
+                    drawer.addItemAtPosition(drawerItem, 1)
+                }
+                drawer.setSelection(0)
             }
-            header.setActiveProfile(users.indexOf(activeUser.email).toLong())
         }
-        catch (e: SettingsException){
-            startAddEmailActivity()
-        }
+    }
+
+    private fun clearFolders(){
+        while(drawer.drawerItems.size > 4)
+            drawer.removeItemByPosition(1)
     }
 
     private fun buildHeader() {
@@ -97,51 +124,37 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: T
                     current: Boolean
                 ): Boolean {
                     val email = profile.name?.text as String
+                    println("OLD")
+                    println(activity.activeUser.email)
                     settings.setActiveUser(email)
+                    activity.activeUser = settings.getActiveUser()
+                    refreshFolders()
                     return false
                 }
-
             })
             .build()
     }
-
 
     private fun buildDrawer() {
         drawer = DrawerBuilder()
             .withActivity(activity)
             .withToolbar(toolbar)
             .withActionBarDrawerToggle(true)
-            .withSelectedItem(0)
+            .withSelectedItem(-1)
             .withAccountHeader(header)
             .addDrawerItems(
-                PrimaryDrawerItem().withIdentifier(0)
-                    .withIconTintingEnabled(true)
-                    .withName(R.string.inbox_item)
-                    .withIcon(R.drawable.ic_mail),
-                PrimaryDrawerItem().withIdentifier(1)
-                    .withIconTintingEnabled(true)
-                    .withName(R.string.sent_item)
-                    .withIcon(R.drawable.ic_send),
-                PrimaryDrawerItem().withIdentifier(2)
-                    .withIconTintingEnabled(true)
-                    .withName(R.string.drafts_item)
-                    .withIcon(R.drawable.ic_drafts),
-                PrimaryDrawerItem().withIdentifier(3)
-                    .withIconTintingEnabled(true)
-                    .withName(R.string.trash_item)
-                    .withIcon(R.drawable.ic_trash),
-                DividerDrawerItem(),
-                PrimaryDrawerItem().withIdentifier(5)
+                DividerDrawerItem().withIdentifier(100),
+                SecondaryDrawerItem().withIdentifier(101)
                     .withIconTintingEnabled(true)
                     .withName(R.string.new_email_item)
                     .withSelectable(false)
                     .withIcon(R.drawable.ic_add_user),
-                PrimaryDrawerItem().withIdentifier(6)
+                SecondaryDrawerItem().withIdentifier(102)
                     .withIconTintingEnabled(true)
                     .withName(R.string.remove_item)
                     .withSelectable(false)
                     .withIcon(R.drawable.ic_remove_user),
-                PrimaryDrawerItem().withIdentifier(7)
+                SecondaryDrawerItem().withIdentifier(103)
                     .withIconTintingEnabled(true)
                     .withName(R.string.settings_item)
                     .withSelectable(false)
@@ -152,39 +165,42 @@ class MailDrawer(private val activity: AppCompatActivity, private val toolbar: T
                     position: Int,
                     drawerItem: IDrawerItem<*>
                 ): Boolean {
-                    when (drawerItem.identifier.toInt()){
-                        in 0..3 -> {
-                            // Mailboxes item click
-                            this@MailDrawer.refreshTitle()
-                        }
-                        5 -> {
-                            // Add email item click
-                            startAddEmailActivity()
-                        }
-                        6 -> {
-                            val profile = header.activeProfile
-                            val email = profile?.name?.text as String
-                            settings.removeUser(email)
-                            header.removeProfile(profile)
-                            refreshHeader()
-                        }
-                        7 ->  {
-                            // Settings item click
-                            activity.supportFragmentManager.beginTransaction()
-                                .addToBackStack(null)
-                                .replace(R.id.fragment_container, SettingsFragment(this@MailDrawer))
-                                .commit()
-                            toolbar.title = activity.getString(R.string.settings_item)
+                    if (drawerItem is PrimaryDrawerItem){
+                        this@MailDrawer.refreshTitle()
+                    }
+                    else if (drawerItem is SecondaryDrawerItem){
+                        when (drawerItem.identifier.toInt()) {
+                            101 -> {
+                                // Add email item click
+                                activity.startAddEmailActivity()
+                            }
+                            102 -> {
+                                val profile = header.activeProfile
+                                val email = profile?.name?.text as String
+                                try {
+                                    settings.removeUser(email)
+                                    header.removeProfile(profile)
+                                    activity.activeUser = settings.getActiveUser()
+                                    refreshHeader()
+                                    refreshFolders()
+                                }
+                                catch (e: SettingsException){
+                                    activity.startAddEmailActivity()
+                                }
+                            }
+                            103 ->  {
+                                // Settings item click
+                                activity.supportFragmentManager.beginTransaction()
+                                    .addToBackStack(null)
+                                    .replace(R.id.fragment_container, SettingsFragment(this@MailDrawer))
+                                    .commit()
+                                toolbar.title = activity.getString(R.string.settings_item)
+                            }
                         }
                     }
                     return false
                 }
             })
             .build()
-    }
-
-    private fun startAddEmailActivity(){
-        val intent = Intent(activity, AddEmailActivity::class.java)
-        activity.startActivityForResult(intent, ADD_EMAIL_REQUEST_CODE)
     }
 }

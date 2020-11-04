@@ -6,7 +6,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.owlpost.SendMailActivity
 import com.example.owlpost.models.UriWrapper
-import kotlinx.android.synthetic.main.activity_login.*
 import java.io.FileNotFoundException
 
 
