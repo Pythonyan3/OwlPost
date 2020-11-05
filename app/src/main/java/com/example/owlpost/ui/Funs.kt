@@ -6,12 +6,15 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.owlpost.SendMailActivity
 import com.example.owlpost.models.UriWrapper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.FileNotFoundException
 
 
 const val PERMISSIONS_REQUEST_CODE = 1
 const val PICK_FILE_REQUEST_CODE = 2
 const val ADD_EMAIL_REQUEST_CODE = 3
+const val SEND_EMAIL_REQUEST_CODE = 4
 
 
 /**
@@ -19,10 +22,12 @@ const val ADD_EMAIL_REQUEST_CODE = 3
  * Gets some data by uri (filename, size)
  * Try to open InputStream
  */
-fun SendMailActivity.getAttachment(data: Intent): UriWrapper {
+suspend fun SendMailActivity.getAttachment(data: Intent): UriWrapper {
     val uri = UriWrapper(data.data as Uri, this)
-    val fis = uri.getInputStream() ?: throw FileNotFoundException("")
-    fis.close()
+    withContext(Dispatchers.IO){
+        val fis = uri.getInputStream() ?: throw FileNotFoundException("")
+        fis.close()
+    }
     return uri
 }
 
@@ -45,23 +50,21 @@ fun AppCompatActivity.showFilePickerIntent() {
  * Function used in coroutines
  */
 fun AppCompatActivity.shortToast(message: String){
-    runOnUiThread {
         Toast.makeText(
             this,
             message,
             Toast.LENGTH_SHORT
         ).show()
-    }
 }
 
 fun AppCompatActivity.showLoading(loadingDialog: LoadingDialog){
-    runOnUiThread{
-        loadingDialog.show()
-    }
+    loadingDialog.show()
 }
 
 fun AppCompatActivity.hideLoading(loadingDialog: LoadingDialog){
-    runOnUiThread {
-        loadingDialog.dismiss()
-    }
+    loadingDialog.dismiss()
+}
+
+fun AppCompatActivity.isValidEmail(email: String): Boolean {
+    return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }

@@ -88,26 +88,27 @@ class Settings(private val context: Context) {
         userEditor.apply()
     }
 
-    fun removeUser(email: String, reset: Boolean = false){
+    fun removeActiveUser(resetUserData: Boolean = false){
         // Remove from users list
+        val usersList = usersList()
         val activeUser = getActiveUser()
-        if (activeUser.email == email)
-            resetActiveUser()
-        val users = usersList()
-        users.remove(email)
-        writeUsersList(users)
+        usersList.remove(activeUser.email)
+        writeUsersList(usersList)
         // Remove user password
-        val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
+        val newUserSettings = context.getSharedPreferences(activeUser.email, Context.MODE_PRIVATE)
         val userEditor = newUserSettings.edit()
         userEditor.remove(USER_PASSWORD_STRING_KEY)
         // reset user's keys
-        if (reset){
+        if (resetUserData){
             userEditor.remove(PUBLIC_ENCRYPT_STRING_KEY)
             userEditor.remove(PRIVATE_ENCRYPT_STRING_KEY)
             userEditor.remove(PUBLIC_SIGN_STRING_KEY)
             userEditor.remove(PRIVATE_SIGN_STRING_KEY)
         }
         userEditor.apply()
+
+        // clear active user record
+        resetActiveUser()
     }
 
     private fun writeUsersList(usersList: MutableSet<String>){

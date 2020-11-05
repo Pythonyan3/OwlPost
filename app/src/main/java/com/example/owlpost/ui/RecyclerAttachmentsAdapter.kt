@@ -56,7 +56,7 @@ class RecyclerAttachmentsAdapter(private var attachments: Attachments): Recycler
         }
 
         private fun loadImage(uri: UriWrapper){
-            if (uri.type.contains("image")){
+            if (uri.getType().contains("image")){
                 imagePreview.visibility = View.VISIBLE
                 val requestOptions = RequestOptions()
                     .placeholder(ic_image)
@@ -72,11 +72,11 @@ class RecyclerAttachmentsAdapter(private var attachments: Attachments): Recycler
         }
 
         private fun setIcon(uri: UriWrapper){
-            if (uri.type.contains("image"))
+            if (uri.getType().contains("image"))
                 icon.setBackgroundResource(R.drawable.ic_image)
-            else if (uri.type.contains("audio"))
+            else if (uri.getType().contains("audio"))
                 icon.setBackgroundResource(R.drawable.ic_audio)
-            else if (uri.type.contains("video"))
+            else if (uri.getType().contains("video"))
                 icon.setBackgroundResource(R.drawable.ic_video)
             else
                 icon.setBackgroundResource(R.drawable.ic_file)

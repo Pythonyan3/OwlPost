@@ -29,6 +29,6 @@ class SettingsFragment(private val drawer: MailDrawer) : Fragment() {
     override fun onStop() {
         super.onStop()
         drawer.enableDrawer()
-        drawer.refreshTitle()
+        drawer.updateTitle()
     }
 }

@@ -12,6 +12,9 @@ import com.example.owlpost.models.SettingsException
 import com.example.owlpost.models.User
 import com.example.owlpost.ui.ADD_EMAIL_REQUEST_CODE
 import com.example.owlpost.ui.MailDrawer
+import com.example.owlpost.ui.SEND_EMAIL_REQUEST_CODE
+import com.example.owlpost.ui.shortToast
+import com.google.android.material.internal.ContextUtils.getActivity
 
 
 class MainActivity : AppCompatActivity() {
@@ -21,18 +24,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private lateinit var settings: Settings
     lateinit var activeUser: User
-    private var mailbox = "inbox"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initFields()
+        initViews()
     }
 
     override fun onStart() {
         super.onStart()
-        initViews()
+        updateActiveUser()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -44,30 +47,38 @@ class MainActivity : AppCompatActivity() {
             if (settings.usersList().isEmpty())
                 finish()
         }
+        else if (requestCode == SEND_EMAIL_REQUEST_CODE && resultCode == Activity.RESULT_OK){
+            shortToast(getString(R.string.message_sent))
+        }
     }
 
     private fun initFields() {
         settings = Settings(this)
         toolbar = binding.mainToolbar
+        drawer = MailDrawer(this, toolbar, settings)
     }
 
     private fun initViews(){
+        setSupportActionBar(toolbar)
+        drawer.createDrawer()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, MailboxFragment(drawer))
+            .commit()
+    }
+
+    fun updateActiveUser(){
         try {
-            setSupportActionBar(toolbar)
             activeUser = settings.getActiveUser()
-            drawer = MailDrawer(this, toolbar, mailbox)
-            drawer.createDrawer()
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, MailboxFragment(drawer))
-                .commit()
+            drawer.updateDrawerData()
         }
-        catch (e: SettingsException) {
+        catch (e: SettingsException){
+            println("No active user!")
             startAddEmailActivity()
         }
     }
 
     fun startAddEmailActivity(){
         val intent = Intent(this, AddEmailActivity::class.java)
-        startActivityForResult(intent, ADD_EMAIL_REQUEST_CODE)
+        this@MainActivity.startActivityForResult(intent, ADD_EMAIL_REQUEST_CODE)
     }
 }

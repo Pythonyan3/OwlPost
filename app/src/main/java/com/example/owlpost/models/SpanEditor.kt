@@ -74,6 +74,13 @@ fun copySpan(span: ParcelableSpan): ParcelableSpan{
         return UnderlineSpan()
 }
 
+fun spansExist(builder: SpannableStringBuilder): Boolean{
+    val styleSpans = builder.getSpans(0, builder.length, StyleSpan::class.java)
+    val foregroundColorSpans = builder.getSpans(0, builder.length, ForegroundColorSpan::class.java)
+    val backgroundColorSpans = builder.getSpans(0, builder.length, ForegroundColorSpan::class.java)
+    return styleSpans.isNotEmpty() || foregroundColorSpans.isNotEmpty() || backgroundColorSpans.isNotEmpty()
+}
+
 /**
  * Checks equality of two spans
  * Spans, instances of StyleSpan, should be equals by 'style' property

@@ -9,6 +9,8 @@ import com.example.owlpost.R
 import java.io.File
 import java.io.InputStream
 import java.net.URI
+import java.net.URLConnection
+import java.nio.file.Files
 
 
 @SuppressLint("Recycle")
@@ -16,7 +18,6 @@ class UriWrapper(val uri: Uri, private val context: Context) {
 
     var filename: String = ""
     var size: Long = 0L
-    val type: String = context.contentResolver.getType(uri) ?: ""
 
     init {
         when (uri.scheme) {
@@ -52,6 +53,15 @@ class UriWrapper(val uri: Uri, private val context: Context) {
             throw FileSizeException(
                 context.getString(R.string.attachment_size, MAX_ATTACHMENTS_SIZE_MB)
             )
+    }
+
+    fun getType(): String {
+        if (uri.scheme == "content")
+            return context.contentResolver.getType(uri).toString()
+        else{
+            val file = File(URI(uri.toString()))
+            return URLConnection.guessContentTypeFromName(file.name);
+        }
     }
 
     fun getInputStream(): InputStream? {

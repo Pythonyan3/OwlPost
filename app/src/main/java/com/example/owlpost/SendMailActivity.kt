@@ -18,16 +18,20 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.text.toHtml
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.models.*
 import com.example.owlpost.ui.*
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.activity_add_mail.*
 import kotlinx.android.synthetic.main.activity_send_mail.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
+import javax.mail.AuthenticationFailedException
+import javax.mail.MessagingException
 
 
 class SendMailActivity : AppCompatActivity() {
@@ -37,6 +41,8 @@ class SendMailActivity : AppCompatActivity() {
     private lateinit var backgroundColors: Array<Int>
     private lateinit var attachments: Attachments
     private lateinit var loadingDialog: LoadingDialog
+    private lateinit var email: String
+    private lateinit var password: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,14 +54,13 @@ class SendMailActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == PICK_FILE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.Main).launch {
                 try {
+                    loadingDialog.setTitle(getString(R.string.loading_title_attach))
                     showLoading(loadingDialog)
                     val attachment = getAttachment(data)
                     attachments.add(attachment)
-                    runOnUiThread {
-                        attachmentsRecycleView.adapter?.notifyDataSetChanged()
-                    }
+                    attachmentsRecycleView.adapter?.notifyDataSetChanged()
                 } catch (e: UriSchemeException) {
                     shortToast(getString(R.string.cant_attach_msg))
                 } catch (e: FileNotFoundException) {
@@ -64,8 +69,7 @@ class SendMailActivity : AppCompatActivity() {
                     e.message?.let { shortToast(it) }
                 } catch (e: AttachmentsSizeException) {
                     e.message?.let { shortToast(it) }
-                }
-                finally {
+                } finally {
                     hideLoading(loadingDialog)
                 }
             }
@@ -82,6 +86,9 @@ class SendMailActivity : AppCompatActivity() {
     }
 
     private fun initFields() {
+        val intent = intent
+        email = intent.getStringExtra("email").toString()
+        password = intent.getStringExtra("password").toString()
         settings = Settings(this)
         loadingDialog = LoadingDialog(this)
         loadingDialog.setTitle(getString(R.string.loading_title_attach))
@@ -144,7 +151,38 @@ class SendMailActivity : AppCompatActivity() {
         }
 
         send_button.setOnClickListener {
-            Toast.makeText(this, "SENDING MAIL", Toast.LENGTH_SHORT).show()
+            messageBody.clearFocus()
+            val toEmail = toEmails.text.toString()
+            val subject = subject.text.toString()
+            val plainText = messageBody.text.toString()
+            val html = messageBody.text?.toHtml().toString()
+            if (toEmail.isNotEmpty() && isValidEmail(toEmail)){
+                loadingDialog.setTitle(getString(R.string.loading_title_sending))
+                showLoading(loadingDialog)
+                val smtp = SMTPWrapper()
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        smtp.sendMessage(email, password, toEmail, subject, attachments, plainText, html)
+                        setResult(RESULT_OK)
+                        this@SendMailActivity.finish()
+                    }
+                    catch (e: AuthenticationFailedException){
+                        shortToast(getString(R.string.auth_error))
+                    }
+                    catch (e: MessagingException){
+                        println(e.message)
+                        Snackbar.make(
+                            this@SendMailActivity.
+                            constraintLayout,
+                            getString(R.string.internet_connection),
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                    finally {
+                        hideLoading(loadingDialog)
+                    }
+                }
+            }
         }
 
         messageBody.setOnFocusChangeListener { _: View, isFocused: Boolean ->
@@ -248,7 +286,7 @@ class SendMailActivity : AppCompatActivity() {
      * Update background colors of foreground and background colors spinners
      */
     private fun updateFormattingPanel(selectionStart: Int, selectionEnd: Int) {
-        if (formatting_panel.isVisible){
+        if (formatting_panel.isVisible) {
             var foregroundIndex = 0
             var backgroundIndex = 0
             var isBold = false

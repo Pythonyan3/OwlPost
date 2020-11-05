@@ -6,15 +6,15 @@ import com.example.owlpost.models.IMAPWrapper
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.SettingsException
 import com.example.owlpost.models.User
-import com.example.owlpost.ui.LoadingDialog
-import com.example.owlpost.ui.hideLoading
-import com.example.owlpost.ui.shortToast
-import com.example.owlpost.ui.showLoading
+import com.example.owlpost.ui.*
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_add_mail.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.mail.AuthenticationFailedException
+import javax.mail.MessagingException
 
 
 class AddEmailActivity : AppCompatActivity() {
@@ -45,14 +45,16 @@ class AddEmailActivity : AppCompatActivity() {
                 shortToast(getString(R.string.incorrect_email))
             }
             else {
-                CoroutineScope(Dispatchers.Default).launch{
-                    try {
-                        showLoading(loadingDialog)
-                        val imap = IMAPWrapper(email, password)
-                        val store = imap.getStore()
-                        store.connect(imap.emailHost, email, password)
-                        store.close()
-                        setting.addUser(User(email, password))
+                showLoading(loadingDialog)
+                val imap = IMAPWrapper(email, password)
+                val store = imap.getStore()
+                CoroutineScope(Dispatchers.Main).launch{
+                    try{
+                        withContext(Dispatchers.IO){
+                            store.connect(imap.emailHost, email, password)
+                            store.close()
+                            setting.addUser(User(email, password))
+                        }
                         setResult(RESULT_OK)
                         this@AddEmailActivity.finish()
                     }
@@ -60,8 +62,15 @@ class AddEmailActivity : AppCompatActivity() {
                         shortToast(getString(R.string.email_already_exists))
                     }
                     catch (e: AuthenticationFailedException) {
-                        println(e.message)
                         shortToast(getString(R.string.auth_error))
+                    }
+                    catch (e: MessagingException){
+                        Snackbar.make(
+                            this@AddEmailActivity.
+                            addEmailLayout,
+                            getString(R.string.internet_connection),
+                            Snackbar.LENGTH_LONG
+                        ).show()
                     }
                     finally {
                         hideLoading(loadingDialog)
@@ -71,7 +80,5 @@ class AddEmailActivity : AppCompatActivity() {
         }
     }
 
-    private fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
+
 }

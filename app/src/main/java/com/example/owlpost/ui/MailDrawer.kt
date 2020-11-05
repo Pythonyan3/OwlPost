@@ -1,19 +1,14 @@
 package com.example.owlpost.ui
 
-import android.content.Intent
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.res.ResourcesCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import com.example.owlpost.AddEmailActivity
 import com.example.owlpost.MainActivity
 import com.example.owlpost.R
 import com.example.owlpost.fragments.SettingsFragment
 import com.example.owlpost.models.IMAPWrapper
 import com.example.owlpost.models.Settings
-import com.example.owlpost.models.SettingsException
-import com.example.owlpost.models.User
 import com.mikepenz.materialdrawer.AccountHeader
 import com.mikepenz.materialdrawer.AccountHeaderBuilder
 import com.mikepenz.materialdrawer.Drawer
@@ -24,15 +19,11 @@ import com.mikepenz.materialdrawer.model.ProfileDrawerItem
 import com.mikepenz.materialdrawer.model.SecondaryDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IProfile
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.util.*
+import kotlinx.coroutines.*
 
-class MailDrawer(private val activity: MainActivity, private val toolbar: Toolbar, private var mailbox: String){
+class MailDrawer(private val activity: MainActivity, private val toolbar: Toolbar, private val settings: Settings){
     private lateinit var drawer: Drawer
     private lateinit var header: AccountHeader
-    private var settings: Settings = Settings(activity)
     private val icons = arrayOf(
         ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_1, null),
         ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_2, null),
@@ -44,8 +35,6 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
     fun createDrawer(){
         buildHeader()
         buildDrawer()
-        refreshHeader()
-        refreshFolders()
     }
 
     fun disableDrawer(){
@@ -68,14 +57,19 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
         }
     }
 
-    fun refreshTitle(){
+    fun updateDrawerData(){
+        updateHeaderUsersProfiles()
+        updateDrawerFolderItems()
+    }
+
+    fun updateTitle(){
         val drawerItem = drawer.getDrawerItem(drawer.currentSelection) as PrimaryDrawerItem
         val titleRes = drawerItem.name?.text
         if (titleRes != null)
             toolbar.title = titleRes
     }
 
-    fun refreshHeader(){
+    private fun updateHeaderUsersProfiles(){
         val activeUser = activity.activeUser
         val users = settings.usersList()
         header.clear()
@@ -89,28 +83,27 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
         header.setActiveProfile(users.indexOf(activeUser.email).toLong())
     }
 
-    private fun refreshFolders(){
+    private fun updateDrawerFolderItems(){
         val activeUser = activity.activeUser
-        clearFolders()
-        CoroutineScope(Dispatchers.IO).launch{
+        clearDrawerFolderItems()
+        CoroutineScope(Dispatchers.Main).launch{
             val imap = IMAPWrapper(activeUser.email, activeUser.password)
             val folders = imap.folders()
-            activity.runOnUiThread {
-                for (i in folders.indices){
-                    println(folders[i].toLowerCase().capitalize())
-                    val drawerItem = PrimaryDrawerItem().withIdentifier(i.toLong())
-                        .withSelectable(true)
-                        .withName(folders[i].toLowerCase().capitalize())
-                    drawer.addItemAtPosition(drawerItem, 1)
-                }
-                drawer.setSelection(0)
+            for (i in folders.indices){
+                val drawerItem = PrimaryDrawerItem().withIdentifier(i.toLong())
+                    .withSelectable(true)
+                    .withName(folders[i].toLowerCase().capitalize())
+                drawer.addItemAtPosition(drawerItem, i+1)
             }
+            drawer.setSelection(0)
         }
     }
 
-    private fun clearFolders(){
-        while(drawer.drawerItems.size > 4)
-            drawer.removeItemByPosition(1)
+    private fun clearDrawerFolderItems(){
+        val items = drawer.drawerItems.toTypedArray()
+        for (item in items)
+            if (item is PrimaryDrawerItem)
+                drawer.removeItem(item.identifier)
     }
 
     private fun buildHeader() {
@@ -124,11 +117,8 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                     current: Boolean
                 ): Boolean {
                     val email = profile.name?.text as String
-                    println("OLD")
-                    println(activity.activeUser.email)
                     settings.setActiveUser(email)
-                    activity.activeUser = settings.getActiveUser()
-                    refreshFolders()
+                    activity.updateActiveUser()
                     return false
                 }
             })
@@ -166,7 +156,7 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                     drawerItem: IDrawerItem<*>
                 ): Boolean {
                     if (drawerItem is PrimaryDrawerItem){
-                        this@MailDrawer.refreshTitle()
+                        this@MailDrawer.updateTitle()
                     }
                     else if (drawerItem is SecondaryDrawerItem){
                         when (drawerItem.identifier.toInt()) {
@@ -176,16 +166,10 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                             }
                             102 -> {
                                 val profile = header.activeProfile
-                                val email = profile?.name?.text as String
-                                try {
-                                    settings.removeUser(email)
+                                if (profile != null){
                                     header.removeProfile(profile)
-                                    activity.activeUser = settings.getActiveUser()
-                                    refreshHeader()
-                                    refreshFolders()
-                                }
-                                catch (e: SettingsException){
-                                    activity.startAddEmailActivity()
+                                    settings.removeActiveUser()
+                                    activity.updateActiveUser()
                                 }
                             }
                             103 ->  {

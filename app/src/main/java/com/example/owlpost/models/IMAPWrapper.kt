@@ -1,5 +1,7 @@
 package com.example.owlpost.models
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.*
 import javax.mail.*
 import kotlin.collections.ArrayList
@@ -8,31 +10,47 @@ import kotlin.collections.ArrayList
 const val PROTOCOL = "imap"
 const val STORE_PROTOCOL = "imaps"
 const val IMAP_PORT = 993
+const val GMAIL_SUFFIX = "[Gmail]/"
 
 class IMAPWrapper(var email: String, var password: String){
     val emailHost: String
     get() = "$PROTOCOL.${email.substring(email.indexOf("@") + 1)}"
 
 
-    fun folders(): Array<String> {
+    suspend fun folders(): Array<String> {
         val resultFolders = ArrayList<String>()
         val store = getStore()
-        store.connect(emailHost, email, password)
+        withContext(Dispatchers.IO){
+            store.connect(emailHost, email, password)
 
-        val folders = store.defaultFolder.list("*")
-        for (folder in folders) {
-            if (folder.type and Folder.HOLDS_MESSAGES != 0) {
-                println(folder.fullName)
-                resultFolders.add(folder.fullName)
+            val folders = store.defaultFolder.list("*")
+            for (folder in folders) {
+                if (folder.type and Folder.HOLDS_MESSAGES != 0) {
+                    val folderName = removeFolderSuffix(folder.fullName)
+                    if (!isSubFolder(folderName))
+                        resultFolders.add(folderName)
+                }
             }
+            store.close()
         }
-        store.close()
         return resultFolders.toTypedArray()
+    }
+
+    private fun removeFolderSuffix(folderName: String): String {
+        return if (folderName.contains(GMAIL_SUFFIX)){
+            val pos = folderName.indexOf(GMAIL_SUFFIX)
+            folderName.substring(pos + GMAIL_SUFFIX.length)
+        } else
+            folderName
+    }
+
+    private fun isSubFolder(folderName: String): Boolean{
+        return folderName.contains("/")
     }
 
     fun getStore(): Store{
         val properties = getProperties()
-        val session = Session.getDefaultInstance(properties)
+        val session = Session.getInstance(properties)
         return session.store
     }
 

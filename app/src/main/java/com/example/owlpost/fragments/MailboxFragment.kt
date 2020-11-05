@@ -7,10 +7,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.Toolbar
+import com.example.owlpost.AddEmailActivity
 import com.example.owlpost.MainActivity
 import com.example.owlpost.SendMailActivity
 import com.example.owlpost.databinding.FragmentMailboxBinding
+import com.example.owlpost.ui.ADD_EMAIL_REQUEST_CODE
 import com.example.owlpost.ui.MailDrawer
+import com.example.owlpost.ui.SEND_EMAIL_REQUEST_CODE
 import kotlinx.android.synthetic.main.fragment_mailbox.*
 
 class MailboxFragment(private val drawer: MailDrawer) : Fragment() {
@@ -32,7 +35,10 @@ class MailboxFragment(private val drawer: MailDrawer) : Fragment() {
     private fun initViews() {
         newMailActionButton.setOnClickListener{
             val activityMain = activity as MainActivity
-            activityMain.startActivity(Intent(activityMain, SendMailActivity::class.java))
+            val intent = Intent(activityMain, SendMailActivity::class.java)
+            intent.putExtra("email", activityMain.activeUser.email)
+            intent.putExtra("password", activityMain.activeUser.password)
+            activityMain.startActivityForResult(intent, SEND_EMAIL_REQUEST_CODE)
         }
     }
 }
