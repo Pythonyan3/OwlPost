@@ -26,14 +26,21 @@
     <string name="auth_error">Authentication error. Check your credentials</string>
     <string name="internet_connection">No internet connection</string>
     <string name="message_sent">Message sent successful</string>
+    <string name="cannot_reset">Cannot reset all user data</string>
+    <string name="import_error">Cannot import keys</string>
+    <string name="import_export_error">Cannot complete operations, cannot read selected file</string>
+    <string name="export_success">Keys exported successful</string>
+    <string name="import_success">Keys imported successful</string>
 
     <!--Exceptions messages-->
     <string name="attachment_size">File exceed total attachments size %1$dMb</string>
     <string name="total_attachments_size">Total attachments size shouldn\'t exceed %1$dMb</string>
-    <string name="uri_scheme">Don\'t support current uri scheme %1$sMb</string>
+    <string name="uri_scheme">Don\'t support current uri scheme %1$s</string>
     <string name="email_already_exists">Entered email already exists</string>
     <string name="active_user_doesnt_exist">Active users doesn\'t exist</string>
     <string name="user_password_not_found">User\'s password not found</string>
+    <string name="cannot_read_folders">Cannot read list of folders</string>
+    <string name="no_selected_mailbox">Mailbox is not selected</string>
 
     <!--Main Activity-->
     <!--Drawer Menu Items Names (mailboxes)-->
@@ -52,6 +59,44 @@
         <item name="drafts_item">drafts</item>
         <item name="trash_item">trash</item>
     </string-array>
+
+    <!--Settings Fragment-->
+
+    <string name="export_public_keys">Export public encryption key and public signature key</string>
+    <string name="export_public_keys_description">
+        Export public encryption and signature keys to file.
+    </string>
+
+    <string name="export_private_keys">Export private encryption key and private signature key</string>
+    <string name="export_private_keys_description">
+        Export private encryption and signature keys to file.
+    </string>
+
+    <string name="import_public_keys">Import public encryption key and public signature key</string>
+    <string name="import_public_keys_description">
+        Import public encryption and signature keys from file to application settings.
+    </string>
+    <string name="import_public_dialog_info">
+        If you already have a public key, after importing a new key you cannot decrypt mails
+        from users you shared previous public key with.
+        Use in case you have reinstalled an app or changed device.
+    </string>
+
+    <string name="import_private_keys">Import private encryption key and private signature key</string>
+    <string name="import_private_keys_description">
+        Import private encryption and signature keys from file to application settings.
+    </string>
+    <string name="import_private_dialog_info">
+        If you already have a private key, after importing a new key you cannot decrypt mails
+        from users you shared your public key with.
+        Use in case you have reinstalled an app or changed device.
+    </string>
+
+    <string name="remove_reset_caption">Remove Email and reset data</string>
+    <string name="remove_reset_description">
+        Remove Email and reset all data, include local stored mails, encryption and signature keys.
+    </string>
+
 
     <integer-array name="foregroundColors">
         <item>@color/formattingBlack</item>

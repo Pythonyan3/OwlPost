@@ -10,7 +10,7 @@ val MAX_ATTACHMENTS_SIZE_BYTES = MAX_ATTACHMENTS_SIZE_MB * 10.0.pow(6).toInt()
 
 
 class Attachments{
-    private val attachments: ArrayList<UriWrapper>
+    private val attachments: ArrayList<UriManager>
     private val context: Context
     val size: Int
     get() = attachments.size
@@ -21,7 +21,7 @@ class Attachments{
         attachments = ArrayList()
     }
 
-    constructor(_context: Context, _attachments: ArrayList<UriWrapper>){
+    constructor(_context: Context, _attachments: ArrayList<UriManager>){
         context = _context
         val totalSize = calcTotalAttachmentsSize(_attachments)
         if (totalSize > MAX_ATTACHMENTS_SIZE_BYTES)
@@ -32,11 +32,11 @@ class Attachments{
         totalAttachmentsSize = totalSize.toInt()
     }
 
-    operator fun get(index: Int): UriWrapper{
+    operator fun get(index: Int): UriManager{
         return attachments[index]
     }
 
-    fun add(element: UriWrapper){
+    fun add(element: UriManager){
         if (totalAttachmentsSize + element.size > MAX_ATTACHMENTS_SIZE_BYTES)
             throw AttachmentsSizeException(
                 context.getString(R.string.total_attachments_size, MAX_ATTACHMENTS_SIZE_MB)
@@ -51,11 +51,11 @@ class Attachments{
         totalAttachmentsSize -= element.size.toInt()
     }
 
-    fun indexOf(element: UriWrapper): Int{
+    fun indexOf(element: UriManager): Int{
         return attachments.indexOf(element)
     }
 
-    private fun calcTotalAttachmentsSize(_attachments: ArrayList<UriWrapper>): Long{
+    private fun calcTotalAttachmentsSize(_attachments: ArrayList<UriManager>): Long{
         var totalSize = 0L
         _attachments.forEach {
             totalSize += it.size

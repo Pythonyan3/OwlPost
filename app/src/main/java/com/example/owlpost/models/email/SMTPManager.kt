@@ -1,11 +1,10 @@
-package com.example.owlpost.models
+package com.example.owlpost.models.email
 
 
-import android.net.Uri
+import com.example.owlpost.models.Attachments
+import com.example.owlpost.models.UriManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.net.URI
 import java.util.*
 import javax.activation.DataHandler
 import javax.mail.*
@@ -16,19 +15,17 @@ import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
 
-class SMTPWrapper{
-    val SMTP_PORT = 465
+class SMTPManager(private val email: String, private val password: String){
+    private val SMTP_PORT = 465
 
     suspend fun sendMessage(
-        email: String,
-        password: String,
         recipient: String,
         subject: String,
         attachments: Attachments,
         plainText: String,
         html: String = ""
     ){
-        val session = getSession(email, password)
+        val session = getSession()
         val message = MimeMessage(session)
 
         // init primary message fields
@@ -71,7 +68,7 @@ class SMTPWrapper{
         return bodyPart
     }
 
-    private fun getAttachmentBodyPart(uri: UriWrapper): MimeBodyPart {
+    private fun getAttachmentBodyPart(uri: UriManager): MimeBodyPart {
         val bytes: ByteArray
         val inputStream = uri.getInputStream()
         bytes = inputStream?.readBytes() as ByteArray
@@ -83,18 +80,19 @@ class SMTPWrapper{
         return attachmentBodyPart
     }
 
-    private fun getSession(email: String, password: String): Session {
-        val properties = getProperties(email)
+    private fun getSession(): Session {
+        val properties = getProperties()
         val auth = EmailAuthenticator(email, password)
         return Session.getInstance(properties, auth)
     }
 
-    private fun getProperties(email: String): Properties {
+    private fun getProperties(): Properties {
         val properties = Properties()
         properties["mail.smtp.host"] = getEmailHost(email)
+        properties["mail.smtp.starttls.enable"] = "true"
+        properties["mail.smtp.ssl.enable"] = "true"
         properties["mail.smtp.port"] = SMTP_PORT
         properties["mail.smtp.auth"] = "true"
-        properties["mail.smtp.ssl.enable"] = "true"
         return properties
     }
 

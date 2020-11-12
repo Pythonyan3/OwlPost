@@ -7,9 +7,9 @@
 
         <item name="android:colorBackground">@color/formattingWhite</item>
         <item name="material_drawer_background">@color/formattingWhite</item>
-        <item name="material_drawer_primary_text">@color/formattingBlack</item>
-        <item name="material_drawer_secondary_text">@color/formattingBlack</item>
-        <item name="material_drawer_primary_icon">@color/formattingBlack</item>
+        <item name="material_drawer_primary_text">@color/material_drawer_secondary_text</item>
+        <item name="material_drawer_secondary_text">@color/material_drawer_secondary_text</item>
+        <item name="material_drawer_primary_icon">@color/material_drawer_secondary_text</item>
     </style>
 
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">

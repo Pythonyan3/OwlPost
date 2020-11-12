@@ -2,28 +2,31 @@ package com.example.owlpost
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.appcompat.widget.Toolbar
 import com.example.owlpost.databinding.ActivityMainBinding
 import com.example.owlpost.fragments.MailboxFragment
+import com.example.owlpost.models.email.Mailbox
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.SettingsException
-import com.example.owlpost.models.User
-import com.example.owlpost.ui.ADD_EMAIL_REQUEST_CODE
-import com.example.owlpost.ui.MailDrawer
-import com.example.owlpost.ui.SEND_EMAIL_REQUEST_CODE
-import com.example.owlpost.ui.shortToast
-import com.google.android.material.internal.ContextUtils.getActivity
+import com.example.owlpost.models.data.User
+import com.example.owlpost.ui.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.mail.MessagingException
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var drawer: MailDrawer
     private lateinit var toolbar: Toolbar
-    private lateinit var settings: Settings
+    lateinit var settings: Settings
+    lateinit var drawer: MailDrawer
     lateinit var activeUser: User
+    lateinit var mailbox: Mailbox
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,18 +65,29 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         drawer.createDrawer()
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, MailboxFragment(drawer))
+            .replace(R.id.fragment_container, MailboxFragment())
             .commit()
     }
 
     fun updateActiveUser(){
         try {
             activeUser = settings.getActiveUser()
-            drawer.updateDrawerData()
+            mailbox = Mailbox(this, activeUser.email, activeUser.password)
+            CoroutineScope(Dispatchers.Main).launch {
+                drawer.updateDrawerData(activeUser, settings.usersList(), mailbox.getFolders())
+            }
+        }
+        catch (e: MessagingException){
+            shortToast(getString(R.string.internet_connection))
         }
         catch (e: SettingsException){
-            println("No active user!")
             startAddEmailActivity()
+        }
+    }
+
+    fun loadMessages(){
+        CoroutineScope(Dispatchers.Main).launch {
+            mailbox.getMessages(0)
         }
     }
 

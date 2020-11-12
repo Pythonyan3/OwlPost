@@ -14,7 +14,7 @@ import java.nio.file.Files
 
 
 @SuppressLint("Recycle")
-class UriWrapper(val uri: Uri, private val context: Context) {
+class UriManager(val uri: Uri, private val context: Context) {
 
     var filename: String = ""
     var size: Long = 0L
@@ -56,24 +56,16 @@ class UriWrapper(val uri: Uri, private val context: Context) {
     }
 
     fun getType(): String {
-        if (uri.scheme == "content")
-            return context.contentResolver.getType(uri).toString()
+        return if (uri.scheme == "content")
+            context.contentResolver.getType(uri).toString()
         else{
             val file = File(URI(uri.toString()))
-            return URLConnection.guessContentTypeFromName(file.name);
+            URLConnection.guessContentTypeFromName(file.name);
         }
     }
 
     fun getInputStream(): InputStream? {
-        return when (uri.scheme) {
-            "content" -> {
-                context.contentResolver.openInputStream(uri)
-            }
-            else -> {
-                val file = File(URI(uri.toString()))
-                file.inputStream()
-            }
-        }
+        return context.contentResolver.openInputStream(uri)
     }
 
     fun formattedSize(): String{

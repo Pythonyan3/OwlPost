@@ -1,25 +1,29 @@
 package com.example.owlpost.ui
 
+import android.graphics.Color
 import android.view.View
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.example.owlpost.MainActivity
 import com.example.owlpost.R
 import com.example.owlpost.fragments.SettingsFragment
-import com.example.owlpost.models.IMAPWrapper
 import com.example.owlpost.models.Settings
+import com.example.owlpost.models.data.EmailFolder
+import com.example.owlpost.models.data.User
 import com.mikepenz.materialdrawer.AccountHeader
 import com.mikepenz.materialdrawer.AccountHeaderBuilder
 import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.DrawerBuilder
+import com.mikepenz.materialdrawer.holder.BadgeStyle
 import com.mikepenz.materialdrawer.model.DividerDrawerItem
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem
 import com.mikepenz.materialdrawer.model.ProfileDrawerItem
 import com.mikepenz.materialdrawer.model.SecondaryDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IProfile
-import kotlinx.coroutines.*
+import java.util.*
 
 class MailDrawer(private val activity: MainActivity, private val toolbar: Toolbar, private val settings: Settings){
     private lateinit var drawer: Drawer
@@ -57,21 +61,19 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
         }
     }
 
-    fun updateDrawerData(){
-        updateHeaderUsersProfiles()
-        updateDrawerFolderItems()
+    fun updateDrawerData(activeUser: User, users: MutableSet<String>, folders: Array<EmailFolder>){
+        updateHeaderProfiles(activeUser, users)
+        updateDrawerFolderItems(folders)
     }
 
     fun updateTitle(){
         val drawerItem = drawer.getDrawerItem(drawer.currentSelection) as PrimaryDrawerItem
-        val titleRes = drawerItem.name?.text
-        if (titleRes != null)
-            toolbar.title = titleRes
+        val titleText = drawerItem.name?.text
+        if (titleText != null)
+            toolbar.title = titleText
     }
 
-    private fun updateHeaderUsersProfiles(){
-        val activeUser = activity.activeUser
-        val users = settings.usersList()
+    private fun updateHeaderProfiles(activeUser: User, users: MutableSet<String>){
         header.clear()
         for (i in users.indices){
             header.addProfiles(ProfileDrawerItem()
@@ -83,20 +85,23 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
         header.setActiveProfile(users.indexOf(activeUser.email).toLong())
     }
 
-    private fun updateDrawerFolderItems(){
-        val activeUser = activity.activeUser
+    private fun updateDrawerFolderItems(folders: Array<EmailFolder>){
         clearDrawerFolderItems()
-        CoroutineScope(Dispatchers.Main).launch{
-            val imap = IMAPWrapper(activeUser.email, activeUser.password)
-            val folders = imap.folders()
-            for (i in folders.indices){
-                val drawerItem = PrimaryDrawerItem().withIdentifier(i.toLong())
-                    .withSelectable(true)
-                    .withName(folders[i].toLowerCase().capitalize())
-                drawer.addItemAtPosition(drawerItem, i+1)
+        for (i in folders.indices){
+            val drawerItem = PrimaryDrawerItem().withIdentifier(i.toLong())
+                .withSelectable(true)
+                .withName(folders[i].folderName.toLowerCase(Locale.getDefault()).capitalize(Locale.getDefault()))
+            if (folders[i].unreadCount != 0) {
+                drawerItem.withBadge(folders[i].unreadCount.toString())
+                    .withBadgeStyle(BadgeStyle()
+                        .withColor(ContextCompat.getColor(activity, R.color.colorPrimaryDark))
+                        .withTextColor(Color.WHITE)
+                        .withCornersDp(10)
+                    )
             }
-            drawer.setSelection(0)
+            drawer.addItemAtPosition(drawerItem, i+1)
         }
+        drawer.setSelection(0)
     }
 
     private fun clearDrawerFolderItems(){
@@ -156,7 +161,12 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                     drawerItem: IDrawerItem<*>
                 ): Boolean {
                     if (drawerItem is PrimaryDrawerItem){
-                        this@MailDrawer.updateTitle()
+                        val titleText = drawerItem.name?.text
+                        if (titleText != null && toolbar.title != titleText){
+                            toolbar.title = titleText
+                            activity.mailbox.folderName = titleText.toString()
+                            activity.loadMessages()
+                        }
                     }
                     else if (drawerItem is SecondaryDrawerItem){
                         when (drawerItem.identifier.toInt()) {
@@ -167,7 +177,6 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                             102 -> {
                                 val profile = header.activeProfile
                                 if (profile != null){
-                                    header.removeProfile(profile)
                                     settings.removeActiveUser()
                                     activity.updateActiveUser()
                                 }
@@ -176,7 +185,7 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                                 // Settings item click
                                 activity.supportFragmentManager.beginTransaction()
                                     .addToBackStack(null)
-                                    .replace(R.id.fragment_container, SettingsFragment(this@MailDrawer))
+                                    .replace(R.id.fragment_container, SettingsFragment())
                                     .commit()
                                 toolbar.title = activity.getString(R.string.settings_item)
                             }

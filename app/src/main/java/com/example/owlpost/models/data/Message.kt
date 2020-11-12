@@ -1,4 +1,4 @@
-package com.example.owlpost.models
+package com.example.owlpost.models.data
 
 data class Message (
     val from: String,

@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.text.ParcelableSpan
 import android.text.SpannableStringBuilder
@@ -22,13 +23,14 @@ import androidx.core.text.toHtml
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.models.*
+import com.example.owlpost.models.email.SMTPManager
 import com.example.owlpost.ui.*
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.activity_add_mail.*
 import kotlinx.android.synthetic.main.activity_send_mail.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.FileNotFoundException
 import javax.mail.AuthenticationFailedException
 import javax.mail.MessagingException
@@ -36,7 +38,6 @@ import javax.mail.MessagingException
 
 class SendMailActivity : AppCompatActivity() {
     private lateinit var settings: Settings
-    private lateinit var currentUser: User
     private lateinit var foregroundColors: Array<Int>
     private lateinit var backgroundColors: Array<Int>
     private lateinit var attachments: Attachments
@@ -53,7 +54,7 @@ class SendMailActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_FILE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
+        if (requestCode == PICK_ATTACHMENT_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
             CoroutineScope(Dispatchers.Main).launch {
                 try {
                     loadingDialog.setTitle(getString(R.string.loading_title_attach))
@@ -82,7 +83,25 @@ class SendMailActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        showFilePickerIntent()
+        if (requestCode == PERMISSIONS_REQUEST_CODE)
+            if ((grantResults.isNotEmpty() &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                showFilePickerIntent(PICK_ATTACHMENT_REQUEST_CODE)
+            }
+    }
+
+    /**
+     * Makes an instance of UriWrapper
+     * Gets some data by uri (filename, size)
+     * Try to open InputStream
+     */
+    private suspend fun getAttachment(data: Intent): UriManager {
+        val uri = UriManager(data.data as Uri, this)
+        withContext(Dispatchers.IO){
+            val fis = uri.getInputStream() ?: throw FileNotFoundException("")
+            fis.close()
+        }
+        return uri
     }
 
     private fun initFields() {
@@ -97,8 +116,6 @@ class SendMailActivity : AppCompatActivity() {
         backgroundColors =
             this.resources.getIntArray(R.array.backgroundColors).toList().toTypedArray()
         attachments = Attachments(this)
-        //settings.init(this)
-        //currentUser = settings.getCurrentUser()
     }
 
     private fun initViewsListeners() {
@@ -134,20 +151,7 @@ class SendMailActivity : AppCompatActivity() {
         }
 
         attach_button.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(
-                    this@SendMailActivity,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                )
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    PERMISSIONS_REQUEST_CODE
-                )
-            } else {
-                this.showFilePickerIntent()
-            }
+            this.showFilePickerIntent(PICK_ATTACHMENT_REQUEST_CODE)
         }
 
         send_button.setOnClickListener {
@@ -159,10 +163,10 @@ class SendMailActivity : AppCompatActivity() {
             if (toEmail.isNotEmpty() && isValidEmail(toEmail)){
                 loadingDialog.setTitle(getString(R.string.loading_title_sending))
                 showLoading(loadingDialog)
-                val smtp = SMTPWrapper()
+                val smtp = SMTPManager(email, password)
                 CoroutineScope(Dispatchers.Main).launch {
                     try {
-                        smtp.sendMessage(email, password, toEmail, subject, attachments, plainText, html)
+                        smtp.sendMessage(toEmail, subject, attachments, plainText, html)
                         setResult(RESULT_OK)
                         this@SendMailActivity.finish()
                     }

@@ -16,7 +16,7 @@ import com.example.owlpost.ui.MailDrawer
 import com.example.owlpost.ui.SEND_EMAIL_REQUEST_CODE
 import kotlinx.android.synthetic.main.fragment_mailbox.*
 
-class MailboxFragment(private val drawer: MailDrawer) : Fragment() {
+class MailboxFragment: Fragment() {
     private lateinit var binding: FragmentMailboxBinding
 
     override fun onCreateView(

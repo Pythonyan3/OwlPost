@@ -2,10 +2,10 @@ package com.example.owlpost
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.example.owlpost.models.IMAPWrapper
+import com.example.owlpost.models.email.IMAPManager
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.SettingsException
-import com.example.owlpost.models.User
+import com.example.owlpost.models.data.User
 import com.example.owlpost.ui.*
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_add_mail.*
@@ -46,7 +46,7 @@ class AddEmailActivity : AppCompatActivity() {
             }
             else {
                 showLoading(loadingDialog)
-                val imap = IMAPWrapper(email, password)
+                val imap = IMAPManager(email, password)
                 val store = imap.getStore()
                 CoroutineScope(Dispatchers.Main).launch{
                     try{
