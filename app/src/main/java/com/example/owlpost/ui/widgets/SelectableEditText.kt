@@ -1,4 +1,4 @@
-package com.example.owlpost.ui
+package com.example.owlpost.ui.widgets
 
 import android.content.Context
 import android.util.AttributeSet

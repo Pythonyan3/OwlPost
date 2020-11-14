@@ -5,7 +5,8 @@ import android.content.SharedPreferences
 import android.net.Uri
 import androidx.core.content.edit
 import com.example.owlpost.R
-import com.example.owlpost.models.data.User
+import com.example.owlpost.models.cryptography.*
+import java.io.FileNotFoundException
 import java.security.PrivateKey
 import java.security.PublicKey
 
@@ -74,10 +75,10 @@ class Settings(private val context: Context) {
         newUserSettings.edit(commit = true){
             putString(USER_PASSWORD_STRING_KEY, user.password)
             if (newUserSettings.getString(PUBLIC_ENCRYPT_STRING_KEY, null) == null){
-                val cipher = CryptoManager()
+                val manager = KeysManager()
                 // encryption key pair
-                val encryptKeyPair = cipher.generateKeysPair()
-                val signKeyPair = cipher.generateKeysPair()
+                val encryptKeyPair = manager.generateKeysPair("RSA")
+                val signKeyPair = manager.generateKeysPair("RSA")
                 putKeys(user.email, encryptKeyPair.public, signKeyPair.public)
                 putKeys(user.email, encryptKeyPair.private, signKeyPair.private)
             }
@@ -102,59 +103,88 @@ class Settings(private val context: Context) {
         resetActiveUser()
     }
 
-    fun getPublicKey(email: String, stringKey: String): PublicKey{
-        val crypto = CryptoManager()
-        val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
-        val keyString = newUserSettings.getString(stringKey, null) ?: throw SettingsException("")
-        return crypto.publicKeyBase64StringDecode(keyString)
+    fun getPublicKey(email: String, keyWorkType: Int): PublicKey{
+        val manager = KeysManager()
+        val base64Key = readKeyString(email, keyWorkType or PUBLIC_KEY)
+        return manager.publicKeyBase64StringDecode(base64Key, ASYMMETRIC_ENCRYPT_ALGORITHM)
     }
 
-    fun getPrivateKey(email: String, stringKey: String): PrivateKey {
-        val crypto = CryptoManager()
-        val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
-        val keyString = newUserSettings.getString(stringKey, null) ?: throw SettingsException("")
-        return crypto.privateKeyBase64StringDecode(keyString)
+    fun getPrivateKey(email: String, keyWorkType: Int): PrivateKey {
+        val manager = KeysManager()
+        val base64Key = readKeyString(email, keyWorkType or PRIVATE_KEY)
+        return manager.privateKeyBase64StringDecode(base64Key, ASYMMETRIC_ENCRYPT_ALGORITHM)
     }
 
-    fun writePublicKeysToFile(email:String, uri: Uri){
-        val crypto = CryptoManager()
-        val encryptKey = getPublicKey(email, PUBLIC_ENCRYPT_STRING_KEY)
-        val signKey = getPublicKey(email, PUBLIC_SIGN_STRING_KEY)
-        val encryptSpec = crypto.encodeKeyToSpec(encryptKey)
-        val signSpec = crypto.encodeKeyToSpec(signKey)
+    private fun putKeys(email: String, encryptKey: PublicKey, signKey: PublicKey){
+        val manager = KeysManager()
+        val base64EncryptKey = manager.encodeKeyToBase64String(encryptKey)
+        val base64SignKey = manager.encodeKeyToBase64String(signKey)
+        putKeyStrings(email, base64EncryptKey, base64SignKey, PUBLIC_KEY)
+    }
+
+    private fun putKeys(email: String, encryptKey: PrivateKey, signKey: PrivateKey){
+        val manager = KeysManager()
+        val base64EncryptKey = manager.encodeKeyToBase64String(encryptKey)
+        val base64SignKey = manager.encodeKeyToBase64String(signKey)
+        putKeyStrings(email, base64EncryptKey, base64SignKey, PRIVATE_KEY)
+    }
+
+    private fun putKeyStrings(email: String, base64EncryptKey: String, base64SignKey: String, accessKeyType: Int){
+        val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
+        newUserSettings.edit(commit = true){
+            when(accessKeyType){
+                PUBLIC_KEY -> {
+                    putString(PUBLIC_ENCRYPT_STRING_KEY, base64EncryptKey)
+                    putString(PUBLIC_SIGN_STRING_KEY, base64SignKey)
+                }
+                PRIVATE_KEY -> {
+                    putString(PRIVATE_ENCRYPT_STRING_KEY, base64EncryptKey)
+                    putString(PRIVATE_SIGN_STRING_KEY, base64SignKey)
+                }
+                else ->
+                    throw SettingsException(context.getString(R.string.access_key_type, accessKeyType))
+            }
+        }
+    }
+
+    private fun readKeyString(email: String, keyType: Int): String {
+        val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
+        return when (keyType) {
+            PUBLIC_KEY or ENCRYPT_KEY ->
+                newUserSettings.getString(PUBLIC_ENCRYPT_STRING_KEY, null)
+                    ?: throw SettingsException(context.getString(R.string.key_exist))
+            PUBLIC_KEY or SIGN_KEY ->
+                newUserSettings.getString(PUBLIC_SIGN_STRING_KEY, null)
+                    ?: throw SettingsException(context.getString(R.string.key_exist))
+            PRIVATE_KEY or ENCRYPT_KEY ->
+                newUserSettings.getString(PRIVATE_ENCRYPT_STRING_KEY, null)
+                    ?: throw SettingsException(context.getString(R.string.key_exist))
+            PRIVATE_KEY or SIGN_KEY ->
+                newUserSettings.getString(PRIVATE_SIGN_STRING_KEY, null)
+                    ?: throw SettingsException(context.getString(R.string.key_exist))
+            else ->
+                throw SettingsException(context.getString(R.string.key_type, keyType))
+        }
+    }
+
+    fun writeKeysToFile(email:String, uri: Uri, accessKeyType: Int){
+        val base64EncryptKey = readKeyString(email, accessKeyType or ENCRYPT_KEY).toByteArray()
+        val base64SignKey = readKeyString(email, accessKeyType or SIGN_KEY).toByteArray()
+
         val encryptSize = ByteArray(2)
         val signSize = ByteArray(2)
 
-        encryptSize[0] = (encryptSpec.encoded.size.shr(8)).toByte()
-        encryptSize[1] = encryptSpec.encoded.size.toByte()
-        signSize[0] = (signSpec.encoded.size.shr(8)).toByte()
-        signSize[1] = signSpec.encoded.size.toByte()
+        encryptSize[0] = (base64EncryptKey.size.shr(8)).toByte()
+        encryptSize[1] = base64EncryptKey.size.toByte()
+        signSize[0] = (base64SignKey.size.shr(8)).toByte()
+        signSize[1] = base64SignKey.size.toByte()
 
-        val fos = context.contentResolver.openOutputStream(uri) ?: throw SettingsException("")
-        fos.write(encryptSize + encryptSpec.encoded + signSize + signSpec.encoded)
+        val fos = context.contentResolver.openOutputStream(uri) ?: throw FileNotFoundException("")
+        fos.write(encryptSize + base64EncryptKey + signSize + base64SignKey)
         fos.close()
     }
 
-    fun writePrivateKeysToFile(email:String, uri: Uri){
-        val crypto = CryptoManager()
-        val encryptKey = getPrivateKey(email, PRIVATE_ENCRYPT_STRING_KEY)
-        val signKey = getPrivateKey(email, PRIVATE_SIGN_STRING_KEY)
-        val encryptSpec = crypto.encodeKeyToSpec(encryptKey)
-        val signSpec = crypto.encodeKeyToSpec(signKey)
-        val encryptSize = ByteArray(2)
-        val signSize = ByteArray(2)
-
-        encryptSize[0] = (encryptSpec.encoded.size.shr(8)).toByte()
-        encryptSize[1] = encryptSpec.encoded.size.toByte()
-        signSize[0] = (signSpec.encoded.size.shr(8)).toByte()
-        signSize[1] = signSpec.encoded.size.toByte()
-
-        val fos = context.contentResolver.openOutputStream(uri) ?: throw SettingsException("")
-        fos.write(encryptSize + encryptSpec.encoded + signSize + signSpec.encoded)
-        fos.close()
-    }
-
-    fun readKeysFromFile(email: String, uri: Uri, isPrivate: Boolean = false){
+    fun readKeysFromFile(email: String, uri: Uri, accessKeyType: Int){
         val fis = context.contentResolver.openInputStream(uri) ?: throw SettingsException("")
         val sizeArray = ByteArray(2)
 
@@ -168,40 +198,26 @@ class Settings(private val context: Context) {
         val signBytes = ByteArray(signSize)
         fis.read(signBytes)
         fis.close()
+
         // put keys in to settings
-        val crypto = CryptoManager()
-        if (isPrivate){
-            val encryptKey = crypto.privateKeySpecDecode(encryptBytes)
-            val signKey = crypto.privateKeySpecDecode(signBytes)
-            putKeys(email, encryptKey, signKey)
+        val manager = KeysManager()
+        val base64EncryptKey = String(encryptBytes)
+        val base64SignKey = String(signBytes)
+        when (accessKeyType){
+            PUBLIC_KEY -> {
+                val encryptKey = manager.publicKeyBase64StringDecode(base64EncryptKey, ASYMMETRIC_ENCRYPT_ALGORITHM)
+                val signKey = manager.publicKeyBase64StringDecode(base64SignKey, ASYMMETRIC_ENCRYPT_ALGORITHM)
+                putKeys(email, encryptKey, signKey)
+            }
+            PRIVATE_KEY -> {
+                val encryptKey = manager.privateKeyBase64StringDecode(base64EncryptKey, ASYMMETRIC_ENCRYPT_ALGORITHM)
+                val signKey = manager.privateKeyBase64StringDecode(base64SignKey, ASYMMETRIC_ENCRYPT_ALGORITHM)
+                putKeys(email, encryptKey, signKey)
+            }
+            else ->
+                throw SettingsException(context.getString(R.string.access_key_type, accessKeyType))
         }
-        else{
-            val encryptKey = crypto.publicKeySpecDecode(encryptBytes)
-            val signKey = crypto.publicKeySpecDecode(signBytes)
-            putKeys(email, encryptKey, signKey)
-        }
-    }
 
-    private fun putKeys(email: String, encryptKey: PublicKey, signKey: PublicKey){
-        val crypto = CryptoManager()
-        val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
-        newUserSettings.edit(commit = true){
-            val base64EncryptKey = crypto.encodeKeyToBase64String(encryptKey)
-            val base64SignKey = crypto.encodeKeyToBase64String(signKey)
-            putString(PUBLIC_ENCRYPT_STRING_KEY, base64EncryptKey)
-            putString(PUBLIC_SIGN_STRING_KEY, base64SignKey)
-        }
-    }
-
-    private fun putKeys(email: String, encryptKey: PrivateKey, signKey: PrivateKey){
-        val crypto = CryptoManager()
-        val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
-        newUserSettings.edit(commit = true){
-            val base64EncryptKey = crypto.encodeKeyToBase64String(encryptKey)
-            val base64SignKey = crypto.encodeKeyToBase64String(signKey)
-            putString(PRIVATE_ENCRYPT_STRING_KEY, base64EncryptKey)
-            putString(PRIVATE_SIGN_STRING_KEY, base64SignKey)
-        }
     }
 
     private fun writeUsersList(usersList: MutableSet<String>){

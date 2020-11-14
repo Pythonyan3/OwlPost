@@ -1,4 +1,4 @@
-package com.example.owlpost.ui
+package com.example.owlpost.ui.adapters
 
 import android.content.Context
 import android.graphics.Color

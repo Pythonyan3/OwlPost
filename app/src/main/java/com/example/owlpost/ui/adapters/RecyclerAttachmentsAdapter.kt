@@ -1,4 +1,4 @@
-package com.example.owlpost.ui
+package com.example.owlpost.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.View

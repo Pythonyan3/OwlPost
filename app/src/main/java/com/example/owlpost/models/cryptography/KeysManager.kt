@@ -1,24 +1,24 @@
-package com.example.owlpost.models
+package com.example.owlpost.models.cryptography
 
-import android.content.Context
+import android.util.Base64
 import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
-import android.util.Base64
 
-class CryptoManager(private val algorithm: String = "RSA") {
-    fun generateKeysPair(): KeyPair{
+
+const val ASYMMETRIC_ENCRYPT_ALGORITHM = "RSA"
+const val SYMMETRIC_ENCRYPT_ALGORITHM = "AES"
+const val ENCRYPT_KEY = 0x01
+const val SIGN_KEY = 0x02
+const val PUBLIC_KEY = 0x04
+const val PRIVATE_KEY = 0x08
+
+
+class KeysManager{
+    fun generateKeysPair(algorithm: String = ASYMMETRIC_ENCRYPT_ALGORITHM): KeyPair {
         val keyPairGenerator = KeyPairGenerator.getInstance(algorithm)
         keyPairGenerator.initialize(2048)
         return keyPairGenerator.generateKeyPair()
-    }
-
-    fun encodeKeyToSpec(key: PublicKey): X509EncodedKeySpec{
-        return X509EncodedKeySpec(key.encoded)
-    }
-
-    fun encodeKeyToSpec(key: PrivateKey): PKCS8EncodedKeySpec{
-        return PKCS8EncodedKeySpec(key.encoded)
     }
 
     fun encodeKeyToBase64String(key: PublicKey): String{
@@ -31,26 +31,14 @@ class CryptoManager(private val algorithm: String = "RSA") {
         return Base64.encodeToString(keySpec.encoded, Base64.DEFAULT)
     }
 
-    fun publicKeySpecDecode(bytes: ByteArray): PublicKey{
-        val keySpec = X509EncodedKeySpec(bytes)
-        val keyFactory = KeyFactory.getInstance(algorithm)
-        return keyFactory.generatePublic(keySpec)
-    }
-
-    fun privateKeySpecDecode(bytes: ByteArray): PrivateKey{
-        val keySpec = PKCS8EncodedKeySpec(bytes)
-        val keyFactory = KeyFactory.getInstance(algorithm)
-        return keyFactory.generatePrivate(keySpec)
-    }
-
-    fun publicKeyBase64StringDecode(base64String: String): PublicKey{
+    fun publicKeyBase64StringDecode(base64String: String, algorithm: String): PublicKey {
         val bytes = Base64.decode(base64String.toByteArray(), Base64.DEFAULT)
         val keySpec = X509EncodedKeySpec(bytes)
         val keyFactory = KeyFactory.getInstance(algorithm)
         return keyFactory.generatePublic(keySpec)
     }
 
-    fun privateKeyBase64StringDecode(base64String: String): PrivateKey{
+    fun privateKeyBase64StringDecode(base64String: String, algorithm: String): PrivateKey {
         val bytes = Base64.decode(base64String.toByteArray(), Base64.DEFAULT)
         val keySpec = PKCS8EncodedKeySpec(bytes)
         val keyFactory = KeyFactory.getInstance(algorithm)

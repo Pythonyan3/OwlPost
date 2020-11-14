@@ -1,4 +1,4 @@
-package com.example.owlpost.ui
+package com.example.owlpost.ui.widgets
 
 import android.app.Activity
 import android.app.AlertDialog

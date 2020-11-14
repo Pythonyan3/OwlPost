@@ -27,8 +27,8 @@
     <string name="internet_connection">No internet connection</string>
     <string name="message_sent">Message sent successful</string>
     <string name="cannot_reset">Cannot reset all user data</string>
-    <string name="import_error">Cannot import keys</string>
-    <string name="import_export_error">Cannot complete operations, cannot read selected file</string>
+    <string name="import_error">Error has occurred while importing keys</string>
+    <string name="import_export_error">Cannot complete operations, cannot access selected file</string>
     <string name="export_success">Keys exported successful</string>
     <string name="import_success">Keys imported successful</string>
 
@@ -39,8 +39,13 @@
     <string name="email_already_exists">Entered email already exists</string>
     <string name="active_user_doesnt_exist">Active users doesn\'t exist</string>
     <string name="user_password_not_found">User\'s password not found</string>
-    <string name="cannot_read_folders">Cannot read list of folders</string>
+    <string name="folders_dont_exist">Folders don\'t exist</string>
+    <string name="offset_error">Offset larger than message count</string>
+    <string name="read_message_error">Error was occurred while reading messages</string>
     <string name="no_selected_mailbox">Mailbox is not selected</string>
+    <string name="key_type">Unknown key type %1$d</string>
+    <string name="access_key_type">Unknown access key type %1$d</string>
+    <string name="key_exist">Key doesn\'t exist</string>
 
     <!--Main Activity-->
     <!--Drawer Menu Items Names (mailboxes)-->
@@ -62,17 +67,17 @@
 
     <!--Settings Fragment-->
 
-    <string name="export_public_keys">Export public encryption key and public signature key</string>
+    <string name="export_public_keys">Export public encryption and signature keys</string>
     <string name="export_public_keys_description">
         Export public encryption and signature keys to file.
     </string>
 
-    <string name="export_private_keys">Export private encryption key and private signature key</string>
+    <string name="export_private_keys">Export private encryption and signature keys</string>
     <string name="export_private_keys_description">
         Export private encryption and signature keys to file.
     </string>
 
-    <string name="import_public_keys">Import public encryption key and public signature key</string>
+    <string name="import_public_keys">Import public encryption and signature keys</string>
     <string name="import_public_keys_description">
         Import public encryption and signature keys from file to application settings.
     </string>
@@ -82,7 +87,7 @@
         Use in case you have reinstalled an app or changed device.
     </string>
 
-    <string name="import_private_keys">Import private encryption key and private signature key</string>
+    <string name="import_private_keys">Import private encryption and signature keys</string>
     <string name="import_private_keys_description">
         Import private encryption and signature keys from file to application settings.
     </string>
@@ -96,6 +101,15 @@
     <string name="remove_reset_description">
         Remove Email and reset all data, include local stored mails, encryption and signature keys.
     </string>
+
+    <!--Alert dialog-->
+    <string name="dialog_title">Are you sure?</string>
+    <string name="dialog_message">
+        Reset data will permanently remove mails, encryption and signature keys.
+        If you don\'t have exported keys you will can\'t access encrypted mails.
+    </string>
+    <string name="dialog_yes">Confirm</string>
+    <string name="dialog_no">Cancel</string>
 
 
     <integer-array name="foregroundColors">

@@ -1,6 +1,5 @@
 package com.example.owlpost.models.email
 
-import com.example.owlpost.models.data.EmailFolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*

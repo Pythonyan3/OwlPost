@@ -5,8 +5,9 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.owlpost.models.email.IMAPManager
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.SettingsException
-import com.example.owlpost.models.data.User
+import com.example.owlpost.models.User
 import com.example.owlpost.ui.*
+import com.example.owlpost.ui.widgets.LoadingDialog
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_add_mail.*
 import kotlinx.coroutines.CoroutineScope

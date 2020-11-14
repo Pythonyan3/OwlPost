@@ -1,7 +1,6 @@
 package com.example.owlpost
 
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -17,14 +16,16 @@ import android.text.style.UnderlineSpan
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.text.toHtml
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.models.*
 import com.example.owlpost.models.email.SMTPManager
 import com.example.owlpost.ui.*
+import com.example.owlpost.ui.adapters.ColorSpinnerAdapter
+import com.example.owlpost.ui.adapters.RecyclerAttachmentsAdapter
+import com.example.owlpost.ui.widgets.LoadingDialog
+import com.example.owlpost.ui.widgets.OnSelectionChangedListener
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_send_mail.*
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +39,7 @@ import javax.mail.MessagingException
 
 class SendMailActivity : AppCompatActivity() {
     private lateinit var settings: Settings
+    private lateinit var spanEditor: SpanEditor
     private lateinit var foregroundColors: Array<Int>
     private lateinit var backgroundColors: Array<Int>
     private lateinit var attachments: Attachments
@@ -109,6 +111,7 @@ class SendMailActivity : AppCompatActivity() {
         email = intent.getStringExtra("email").toString()
         password = intent.getStringExtra("password").toString()
         settings = Settings(this)
+        spanEditor = SpanEditor(messageBody.text as SpannableStringBuilder)
         loadingDialog = LoadingDialog(this)
         loadingDialog.setTitle(getString(R.string.loading_title_attach))
         foregroundColors =
@@ -226,8 +229,7 @@ class SendMailActivity : AppCompatActivity() {
         }
 
         cancel_format.setOnClickListener {
-            removeAllSpans(
-                messageBody.text as SpannableStringBuilder,
+            spanEditor.removeAllSpans(
                 messageBody.selectionStart,
                 messageBody.selectionEnd,
             )
@@ -266,8 +268,7 @@ class SendMailActivity : AppCompatActivity() {
 
     private fun setMessageSpan(span: ParcelableSpan) {
         if (messageBody.isFocused)
-            setSpan(
-                messageBody.text as SpannableStringBuilder,
+            spanEditor.setSpan(
                 span,
                 messageBody.selectionStart,
                 messageBody.selectionEnd
@@ -276,8 +277,7 @@ class SendMailActivity : AppCompatActivity() {
 
     private fun removeMessageSpan(span: ParcelableSpan) {
         if (messageBody.isFocused)
-            removeSpan(
-                messageBody.text as SpannableStringBuilder,
+            spanEditor.removeSpan(
                 messageBody.selectionStart,
                 messageBody.selectionEnd,
                 span

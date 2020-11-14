@@ -2,7 +2,6 @@ package com.example.owlpost
 
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.appcompat.widget.Toolbar
@@ -11,8 +10,9 @@ import com.example.owlpost.fragments.MailboxFragment
 import com.example.owlpost.models.email.Mailbox
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.SettingsException
-import com.example.owlpost.models.data.User
+import com.example.owlpost.models.User
 import com.example.owlpost.ui.*
+import com.example.owlpost.ui.widgets.MailDrawer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,12 +45,10 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ADD_EMAIL_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             // onStart override do work
-        }
-        else if (requestCode == ADD_EMAIL_REQUEST_CODE && resultCode == Activity.RESULT_CANCELED){
+        } else if (requestCode == ADD_EMAIL_REQUEST_CODE && resultCode == Activity.RESULT_CANCELED) {
             if (settings.usersList().isEmpty())
                 finish()
-        }
-        else if (requestCode == SEND_EMAIL_REQUEST_CODE && resultCode == Activity.RESULT_OK){
+        } else if (requestCode == SEND_EMAIL_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             shortToast(getString(R.string.message_sent))
         }
     }
@@ -61,7 +59,7 @@ class MainActivity : AppCompatActivity() {
         drawer = MailDrawer(this, toolbar, settings)
     }
 
-    private fun initViews(){
+    private fun initViews() {
         setSupportActionBar(toolbar)
         drawer.createDrawer()
         supportFragmentManager.beginTransaction()
@@ -69,30 +67,27 @@ class MainActivity : AppCompatActivity() {
             .commit()
     }
 
-    fun updateActiveUser(){
+    fun updateActiveUser(fireOnClick: Boolean = true) {
         try {
             activeUser = settings.getActiveUser()
             mailbox = Mailbox(this, activeUser.email, activeUser.password)
             CoroutineScope(Dispatchers.Main).launch {
-                drawer.updateDrawerData(activeUser, settings.usersList(), mailbox.getFolders())
+                drawer.updateDrawerData(
+                    activeUser,
+                    settings.usersList(),
+                    mailbox.getFolders(),
+                    fireOnClick
+                )
             }
-        }
-        catch (e: MessagingException){
+        } catch (e: MessagingException) {
             shortToast(getString(R.string.internet_connection))
-        }
-        catch (e: SettingsException){
+        } catch (e: SettingsException) {
             startAddEmailActivity()
         }
     }
 
-    fun loadMessages(){
-        CoroutineScope(Dispatchers.Main).launch {
-            mailbox.getMessages(0)
-        }
-    }
-
-    fun startAddEmailActivity(){
+    fun startAddEmailActivity() {
         val intent = Intent(this, AddEmailActivity::class.java)
-        this@MainActivity.startActivityForResult(intent, ADD_EMAIL_REQUEST_CODE)
+        this.startActivityForResult(intent, ADD_EMAIL_REQUEST_CODE)
     }
 }

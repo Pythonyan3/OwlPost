@@ -3,10 +3,15 @@ package com.example.owlpost.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.blue
+import androidx.core.graphics.green
+import androidx.core.graphics.red
+import com.example.owlpost.ui.widgets.LoadingDialog
 
 
 const val PERMISSIONS_REQUEST_CODE = 1
@@ -67,4 +72,16 @@ fun hideLoading(loadingDialog: LoadingDialog){
 
 fun isValidEmail(email: String): Boolean {
     return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+}
+
+/**
+ * Adds alpha channel (0x99 - 60%) to color
+ */
+fun setTransparent(color: Int): Int {
+    return Color.argb(
+        0x99,
+        color.red,
+        color.green,
+        color.blue
+    )
 }

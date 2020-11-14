@@ -1,4 +1,4 @@
-package com.example.owlpost.ui
+package com.example.owlpost.ui.widgets
 
 import android.graphics.Color
 import android.view.View
@@ -10,8 +10,8 @@ import com.example.owlpost.MainActivity
 import com.example.owlpost.R
 import com.example.owlpost.fragments.SettingsFragment
 import com.example.owlpost.models.Settings
-import com.example.owlpost.models.data.EmailFolder
-import com.example.owlpost.models.data.User
+import com.example.owlpost.models.email.EmailFolder
+import com.example.owlpost.models.User
 import com.mikepenz.materialdrawer.AccountHeader
 import com.mikepenz.materialdrawer.AccountHeaderBuilder
 import com.mikepenz.materialdrawer.Drawer
@@ -25,7 +25,11 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IProfile
 import java.util.*
 
-class MailDrawer(private val activity: MainActivity, private val toolbar: Toolbar, private val settings: Settings){
+class MailDrawer(
+    private val activity: MainActivity,
+    private val toolbar: Toolbar,
+    private val settings: Settings
+) {
     private lateinit var drawer: Drawer
     private lateinit var header: AccountHeader
     private val icons = arrayOf(
@@ -36,12 +40,12 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
         ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_5, null)
     )
 
-    fun createDrawer(){
+    fun createDrawer() {
         buildHeader()
         buildDrawer()
     }
 
-    fun disableDrawer(){
+    fun disableDrawer() {
         drawer.actionBarDrawerToggle?.isDrawerIndicatorEnabled = false
         activity.supportActionBar?.setDisplayHomeAsUpEnabled(true)
         val drawerLayout = drawer.drawerLayout
@@ -51,7 +55,7 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
         }
     }
 
-    fun enableDrawer(){
+    fun enableDrawer() {
         activity.supportActionBar?.setDisplayHomeAsUpEnabled(false)
         drawer.actionBarDrawerToggle?.isDrawerIndicatorEnabled = true
         val drawerLayout = drawer.drawerLayout
@@ -61,50 +65,60 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
         }
     }
 
-    fun updateDrawerData(activeUser: User, users: MutableSet<String>, folders: Array<EmailFolder>){
+    fun updateDrawerData(
+        activeUser: User,
+        users: MutableSet<String>,
+        folders: Array<EmailFolder>,
+        fireOnClick: Boolean = true
+    ) {
         updateHeaderProfiles(activeUser, users)
-        updateDrawerFolderItems(folders)
+        updateDrawerFolderItems(folders, fireOnClick)
     }
 
-    fun updateTitle(){
+    fun updateTitle() {
         val drawerItem = drawer.getDrawerItem(drawer.currentSelection) as PrimaryDrawerItem
         val titleText = drawerItem.name?.text
         if (titleText != null)
             toolbar.title = titleText
     }
 
-    private fun updateHeaderProfiles(activeUser: User, users: MutableSet<String>){
+    private fun updateHeaderProfiles(activeUser: User, users: MutableSet<String>) {
         header.clear()
-        for (i in users.indices){
-            header.addProfiles(ProfileDrawerItem()
-                .withIdentifier(i.toLong())
-                .withName(users.elementAt(i))
-                .withIcon(icons[i % icons.size])
+        for (i in users.indices) {
+            header.addProfiles(
+                ProfileDrawerItem()
+                    .withIdentifier(i.toLong())
+                    .withName(users.elementAt(i))
+                    .withIcon(icons[i % icons.size])
             )
         }
         header.setActiveProfile(users.indexOf(activeUser.email).toLong())
     }
 
-    private fun updateDrawerFolderItems(folders: Array<EmailFolder>){
+    private fun updateDrawerFolderItems(folders: Array<EmailFolder>, fireOnClick: Boolean = true) {
         clearDrawerFolderItems()
-        for (i in folders.indices){
+        for (i in folders.indices) {
             val drawerItem = PrimaryDrawerItem().withIdentifier(i.toLong())
                 .withSelectable(true)
-                .withName(folders[i].folderName.toLowerCase(Locale.getDefault()).capitalize(Locale.getDefault()))
+                .withName(
+                    folders[i].folderName.toLowerCase(Locale.getDefault())
+                        .capitalize(Locale.getDefault())
+                )
             if (folders[i].unreadCount != 0) {
                 drawerItem.withBadge(folders[i].unreadCount.toString())
-                    .withBadgeStyle(BadgeStyle()
-                        .withColor(ContextCompat.getColor(activity, R.color.colorPrimaryDark))
-                        .withTextColor(Color.WHITE)
-                        .withCornersDp(10)
+                    .withBadgeStyle(
+                        BadgeStyle()
+                            .withColor(ContextCompat.getColor(activity, R.color.colorPrimaryDark))
+                            .withTextColor(Color.WHITE)
+                            .withCornersDp(10)
                     )
             }
-            drawer.addItemAtPosition(drawerItem, i+1)
+            drawer.addItemAtPosition(drawerItem, i + 1)
         }
-        drawer.setSelection(0)
+        drawer.setSelection(0, fireOnClick)
     }
 
-    private fun clearDrawerFolderItems(){
+    private fun clearDrawerFolderItems() {
         val items = drawer.drawerItems.toTypedArray()
         for (item in items)
             if (item is PrimaryDrawerItem)
@@ -115,7 +129,7 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
         header = AccountHeaderBuilder()
             .withActivity(activity)
             .withHeaderBackground(R.drawable.drawer_header)
-            .withOnAccountHeaderListener(object: AccountHeader.OnAccountHeaderListener{
+            .withOnAccountHeaderListener(object : AccountHeader.OnAccountHeaderListener {
                 override fun onProfileChanged(
                     view: View?,
                     profile: IProfile<*>,
@@ -123,7 +137,8 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                 ): Boolean {
                     val email = profile.name?.text as String
                     settings.setActiveUser(email)
-                    activity.updateActiveUser()
+                    activity.updateActiveUser(false)
+                    println("reload messages")
                     return false
                 }
             })
@@ -154,21 +169,20 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                     .withName(R.string.settings_item)
                     .withSelectable(false)
                     .withIcon(R.drawable.ic_settings)
-            ).withOnDrawerItemClickListener(object: Drawer.OnDrawerItemClickListener{
+            ).withOnDrawerItemClickListener(object : Drawer.OnDrawerItemClickListener {
                 override fun onItemClick(
                     view: View?,
                     position: Int,
                     drawerItem: IDrawerItem<*>
                 ): Boolean {
-                    if (drawerItem is PrimaryDrawerItem){
+                    if (drawerItem is PrimaryDrawerItem) {
                         val titleText = drawerItem.name?.text
-                        if (titleText != null && toolbar.title != titleText){
+                        if (titleText != null && toolbar.title != titleText) {
                             toolbar.title = titleText
-                            activity.mailbox.folderName = titleText.toString()
-                            activity.loadMessages()
+                            activity.mailbox.currentFolderName = titleText.toString()
+                            println("reload messages")
                         }
-                    }
-                    else if (drawerItem is SecondaryDrawerItem){
+                    } else if (drawerItem is SecondaryDrawerItem) {
                         when (drawerItem.identifier.toInt()) {
                             101 -> {
                                 // Add email item click
@@ -176,12 +190,12 @@ class MailDrawer(private val activity: MainActivity, private val toolbar: Toolba
                             }
                             102 -> {
                                 val profile = header.activeProfile
-                                if (profile != null){
+                                if (profile != null) {
                                     settings.removeActiveUser()
                                     activity.updateActiveUser()
                                 }
                             }
-                            103 ->  {
+                            103 -> {
                                 // Settings item click
                                 activity.supportFragmentManager.beginTransaction()
                                     .addToBackStack(null)

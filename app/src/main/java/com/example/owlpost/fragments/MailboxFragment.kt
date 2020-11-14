@@ -6,13 +6,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.Toolbar
-import com.example.owlpost.AddEmailActivity
 import com.example.owlpost.MainActivity
 import com.example.owlpost.SendMailActivity
 import com.example.owlpost.databinding.FragmentMailboxBinding
-import com.example.owlpost.ui.ADD_EMAIL_REQUEST_CODE
-import com.example.owlpost.ui.MailDrawer
 import com.example.owlpost.ui.SEND_EMAIL_REQUEST_CODE
 import kotlinx.android.synthetic.main.fragment_mailbox.*
 

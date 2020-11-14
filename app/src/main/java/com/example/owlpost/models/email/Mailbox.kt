@@ -3,78 +3,69 @@ package com.example.owlpost.models.email
 import androidx.appcompat.app.AppCompatActivity
 import com.example.owlpost.R
 import com.example.owlpost.models.MailboxFolderException
-import com.example.owlpost.models.data.EmailFolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
+import java.io.FilenameFilter
 
 class Mailbox(
     val activity: AppCompatActivity,
-    private val email: String,
-    private val password: String
+    email: String,
+    password: String
 ){
-    private val imapManager: IMAPManager = IMAPManager(email, password)
+    private val managerIMAP: IMAPManager = IMAPManager(email, password)
     private val path = "${activity.getExternalFilesDir(null)}/$email"
-    lateinit var folderName: String
+    lateinit var currentFolderName: String
 
     suspend fun getFolders(): Array<EmailFolder>{
-        val file = File(path)
-        if (!file.exists()){
-            println("load folders from server")
-            writeFolders(imapManager.folders())
-        }
-        val list = file.list()
-            ?: throw MailboxFolderException(activity.getString(R.string.cannot_read_folders))
-        val foldersList = ArrayList<EmailFolder>()
-        list.forEach {
-            foldersList.add(getFolderInfo(it))
-        }
-        return foldersList.toTypedArray()
-    }
-
-    suspend fun getMessages(start: Int, msgCount: Int = 10){
-        val end = start + msgCount
-        val folder = getFolderInfo(folderName)
-        val file = File("$path/$folderName")
-        val localMsgsList = file.list()
-            ?: throw MailboxFolderException(activity.getString(R.string.cannot_read_folders))
-        when {
-            start < localMsgsList.size-1 -> {
-                println("storage")
+        val folderNames = readFolderNames()
+        return if (folderNames == null){
+            val folders = managerIMAP.folders()
+            writeFolders(folders)
+            folders
+        } else{
+            val folders = ArrayList<EmailFolder>()
+            folderNames.forEach { folderName: String ->
+                folders.add(EmailFolder(path, folderName))
             }
-            start < folder.totalCount -> {
-                println("server")
-            }
-            else -> {
-                println("No message")
-            }
+            folders.toTypedArray()
         }
     }
 
-    private fun getFolderInfo(folderName: String): EmailFolder {
-        val file = File("$path/$folderName/index")
-        val reader = file.bufferedReader()
-        val info = reader.readLine().split("/")
-        return EmailFolder(folderName, info[0].toInt(), info[1].toInt())
-    }
+    fun getMessages(offset: Int = 0, messageCount: Int = 10): Array<MessageItem>{
+        val file = File("$path/$currentFolderName")
+        val folder = EmailFolder(path, currentFolderName)
 
-    private fun writeFolders(folders: Array<EmailFolder>){
-        folders.forEach {
-            File("$path/${it.folderName}").mkdirs()
-            val file = File("$path/${it.folderName}/index")
-            val writer = file.bufferedWriter()
-            writer.write("${it.totalCount}/${it.unreadCount}")
-            writer.close()
+        if (offset > folder.totalCount || folder.totalCount == 0)
+            return arrayOf()
+        val messageUIDs = file.list { _, name -> name != "index" }
+            ?: throw MailboxFolderException(activity.getString(R.string.read_message_error))
+
+        if (messageUIDs.size < offset){
+            println("read from storage")
         }
+        else{
+            println("load new from server")
+        }
+        return arrayOf()
     }
 
-    suspend fun deleteMailbox(): Boolean {
+    suspend fun resetMailbox(): Boolean {
         var result = false
         withContext(Dispatchers.IO){
             result = File(path).deleteRecursively()
         }
         return result
+    }
+
+    private fun readFolderNames(): Array<String>? {
+        val file = File(path)
+        return file.list()
+    }
+
+    private fun writeFolders(folders: Array<EmailFolder>){
+        folders.forEach {
+            it.writeTo(path)
+        }
     }
 }
