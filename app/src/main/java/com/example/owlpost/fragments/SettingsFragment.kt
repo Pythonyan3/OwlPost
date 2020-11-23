@@ -183,15 +183,15 @@ class SettingsFragment: Fragment() {
         builder.setMessage(getString(R.string.dialog_message))
         builder.setPositiveButton(getString(R.string.dialog_yes)) { dialogInterface: DialogInterface, i: Int ->
             CoroutineScope(Dispatchers.Main).launch {
-                if (mainActivity.mailbox.resetMailbox())
+                if (mainActivity.mailbox.resetMailbox()){
                     mainActivity.settings.removeActiveUser(true)
+                    mainActivity.supportFragmentManager.popBackStack()
+                }
                 else
                     mainActivity.shortToast(mainActivity.getString(R.string.cannot_reset))
-                mainActivity.supportFragmentManager.popBackStack()
-                mainActivity.updateActiveUser()
             }
         }
-        builder.setNegativeButton(getString(R.string.dialog_no)) { dialogInterface: DialogInterface, i: Int ->}
+        builder.setNegativeButton(getString(R.string.dialog_no)) { _: DialogInterface, _: Int ->}
         builder.create()
         return builder
     }

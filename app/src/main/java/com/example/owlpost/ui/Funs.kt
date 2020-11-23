@@ -12,6 +12,7 @@ import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
 import com.example.owlpost.ui.widgets.LoadingDialog
+import java.util.*
 
 
 const val PERMISSIONS_REQUEST_CODE = 1
@@ -85,3 +86,8 @@ fun setTransparent(color: Int): Int {
         color.blue
     )
 }
+
+fun String.capitalizeWords(): String =
+    split(" ").joinToString(" ") {
+        it.toLowerCase(Locale.ROOT).capitalize(Locale.ROOT)
+    }

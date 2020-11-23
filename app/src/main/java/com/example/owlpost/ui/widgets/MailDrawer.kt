@@ -8,10 +8,12 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.example.owlpost.MainActivity
 import com.example.owlpost.R
+import com.example.owlpost.fragments.MailboxFragment
 import com.example.owlpost.fragments.SettingsFragment
 import com.example.owlpost.models.Settings
 import com.example.owlpost.models.email.EmailFolder
 import com.example.owlpost.models.User
+import com.example.owlpost.ui.capitalizeWords
 import com.mikepenz.materialdrawer.AccountHeader
 import com.mikepenz.materialdrawer.AccountHeaderBuilder
 import com.mikepenz.materialdrawer.Drawer
@@ -65,16 +67,6 @@ class MailDrawer(
         }
     }
 
-    fun updateDrawerData(
-        activeUser: User,
-        users: MutableSet<String>,
-        folders: Array<EmailFolder>,
-        fireOnClick: Boolean = true
-    ) {
-        updateHeaderProfiles(activeUser, users)
-        updateDrawerFolderItems(folders, fireOnClick)
-    }
-
     fun updateTitle() {
         val drawerItem = drawer.getDrawerItem(drawer.currentSelection) as PrimaryDrawerItem
         val titleText = drawerItem.name?.text
@@ -82,7 +74,7 @@ class MailDrawer(
             toolbar.title = titleText
     }
 
-    private fun updateHeaderProfiles(activeUser: User, users: MutableSet<String>) {
+    fun updateHeaderProfiles(activeUser: User, users: MutableSet<String>) {
         header.clear()
         for (i in users.indices) {
             header.addProfiles(
@@ -95,14 +87,13 @@ class MailDrawer(
         header.setActiveProfile(users.indexOf(activeUser.email).toLong())
     }
 
-    private fun updateDrawerFolderItems(folders: Array<EmailFolder>, fireOnClick: Boolean = true) {
+    fun updateDrawerFolderItems(folders: Array<EmailFolder>, fireOnClick: Boolean = true) {
         clearDrawerFolderItems()
         for (i in folders.indices) {
             val drawerItem = PrimaryDrawerItem().withIdentifier(i.toLong())
                 .withSelectable(true)
                 .withName(
-                    folders[i].folderName.toLowerCase(Locale.getDefault())
-                        .capitalize(Locale.getDefault())
+                    folders[i].folderName.toLowerCase(Locale.getDefault()).capitalizeWords()
                 )
             if (folders[i].unreadCount != 0) {
                 drawerItem.withBadge(folders[i].unreadCount.toString())
@@ -118,7 +109,7 @@ class MailDrawer(
         drawer.setSelection(0, fireOnClick)
     }
 
-    private fun clearDrawerFolderItems() {
+    fun clearDrawerFolderItems() {
         val items = drawer.drawerItems.toTypedArray()
         for (item in items)
             if (item is PrimaryDrawerItem)
@@ -137,8 +128,8 @@ class MailDrawer(
                 ): Boolean {
                     val email = profile.name?.text as String
                     settings.setActiveUser(email)
-                    activity.updateActiveUser(false)
-                    println("reload messages")
+                    toolbar.title = activity.getString(R.string.app_name)
+                    activity.updateActiveUser()
                     return false
                 }
             })
@@ -153,7 +144,9 @@ class MailDrawer(
             .withSelectedItem(-1)
             .withAccountHeader(header)
             .addDrawerItems(
-                DividerDrawerItem().withIdentifier(100),
+                DividerDrawerItem().withIdentifier(100)
+                    .withTextColor(R.color.colorPrimaryDark)
+                    .withSelectedColor(R.color.colorPrimaryDark),
                 SecondaryDrawerItem().withIdentifier(101)
                     .withIconTintingEnabled(true)
                     .withName(R.string.new_email_item)
@@ -178,15 +171,17 @@ class MailDrawer(
                     if (drawerItem is PrimaryDrawerItem) {
                         val titleText = drawerItem.name?.text
                         if (titleText != null && toolbar.title != titleText) {
-                            toolbar.title = titleText
+                            toolbar.title = titleText.toString()
                             activity.mailbox.currentFolderName = titleText.toString()
-                            println("reload messages")
+                            val fragment = activity.supportFragmentManager.findFragmentByTag("mailbox")
+                            if (fragment != null)
+                                (fragment as MailboxFragment).resetMail()
                         }
                     } else if (drawerItem is SecondaryDrawerItem) {
                         when (drawerItem.identifier.toInt()) {
                             101 -> {
                                 // Add email item click
-                                activity.startAddEmailActivity()
+                               activity.startAddEmailActivity()
                             }
                             102 -> {
                                 val profile = header.activeProfile

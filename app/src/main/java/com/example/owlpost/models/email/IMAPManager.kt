@@ -1,5 +1,6 @@
 package com.example.owlpost.models.email
 
+import com.example.owlpost.models.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
@@ -13,20 +14,20 @@ const val STORE_PROTOCOL = "imaps"
 const val IMAP_PORT = 993
 const val GMAIL_ROOT_FOLDER = "[Gmail]/"
 
-class IMAPManager(var email: String, var password: String){
+class IMAPManager(var user: User){
     val emailHost: String
-    get() = "$PROTOCOL.${email.substring(email.indexOf("@") + 1)}"
+    get() = "$PROTOCOL.${user.email.substring(user.email.indexOf("@") + 1)}"
 
 
     suspend fun folders(): Array<EmailFolder> {
         val resultFolders = ArrayList<EmailFolder>()
         val store = getStore()
         withContext(Dispatchers.IO){
-            store.connect(emailHost, email, password)
+            store.connect(emailHost, user.email, user.password)
             val folders = store.defaultFolder.list("*")
             for (folder in folders) {
                 if (folder.type and Folder.HOLDS_MESSAGES != 0) {
-                    val folderName = removeFolderSuffix(folder.fullName)
+                    val folderName = removeRootFolder(folder.fullName)
                     if (!isSubFolder(folderName)) {
                         val totalCount = folder.messageCount
                         val unreadCount = folder.unreadMessageCount
@@ -39,23 +40,40 @@ class IMAPManager(var email: String, var password: String){
         return resultFolders.toTypedArray()
     }
 
+    suspend fun loadMessages(folderName: String, start: Int, end: Int, path: String){
+        withContext(Dispatchers.IO){
+            val store = getStore()
+            store.connect(emailHost, user.email, user.password)
+            val folder = store.getFolder(addRootFolder(folderName))
+            folder.open(Folder.READ_ONLY)
+            val messages = folder.getMessages(start, end)
+            val uidFolder = folder as UIDFolder
+            val result = Array(messages.size) {i -> OwlMessage(uidFolder.getUID(messages[i]), folderName, messages[i] as MimeMessage)}
+            result.forEach {
+                it.writeTo(path)
+            }
+            folder.close(false)
+            store.close()
+        }
+    }
+
     fun appendToFolder(msg: MimeMessage, folderName: String){
         val store = getStore()
-        val sentFolder = store.getFolder(addFolderSuffix(folderName))
+        val sentFolder = store.getFolder(addRootFolder(folderName))
         sentFolder.open(Folder.READ_WRITE)
         sentFolder.appendMessages(arrayOf(msg))
         sentFolder.close(true)
         store.close()
     }
 
-    private fun addFolderSuffix(folderName: String): String{
-        return if (email.contains("gmail") && !folderName.toLowerCase(Locale.ROOT).contains("inbox"))
+    private fun addRootFolder(folderName: String): String{
+        return if (user.email.contains("gmail") && !folderName.toLowerCase(Locale.ROOT).contains("inbox"))
             "[Gmail]/$folderName"
         else
             folderName
     }
 
-    private fun removeFolderSuffix(folderName: String): String {
+    private fun removeRootFolder(folderName: String): String {
         return if (folderName.contains(GMAIL_ROOT_FOLDER)){
             val pos = folderName.indexOf(GMAIL_ROOT_FOLDER)
             folderName.substring(pos + GMAIL_ROOT_FOLDER.length)

@@ -44,8 +44,7 @@ class SendMailActivity : AppCompatActivity() {
     private lateinit var backgroundColors: Array<Int>
     private lateinit var attachments: Attachments
     private lateinit var loadingDialog: LoadingDialog
-    private lateinit var email: String
-    private lateinit var password: String
+    private lateinit var user: User
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,8 +107,10 @@ class SendMailActivity : AppCompatActivity() {
 
     private fun initFields() {
         val intent = intent
-        email = intent.getStringExtra("email").toString()
-        password = intent.getStringExtra("password").toString()
+        user = User(
+            intent.getStringExtra("email").toString(),
+            intent.getStringExtra("password").toString()
+        )
         settings = Settings(this)
         spanEditor = SpanEditor(messageBody.text as SpannableStringBuilder)
         loadingDialog = LoadingDialog(this)
@@ -166,7 +167,7 @@ class SendMailActivity : AppCompatActivity() {
             if (toEmail.isNotEmpty() && isValidEmail(toEmail)){
                 loadingDialog.setTitle(getString(R.string.loading_title_sending))
                 showLoading(loadingDialog)
-                val smtp = SMTPManager(email, password)
+                val smtp = SMTPManager(user)
                 CoroutineScope(Dispatchers.Main).launch {
                     try {
                         smtp.sendMessage(toEmail, subject, attachments, plainText, html)

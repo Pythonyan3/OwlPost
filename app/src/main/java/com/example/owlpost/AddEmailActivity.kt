@@ -47,7 +47,7 @@ class AddEmailActivity : AppCompatActivity() {
             }
             else {
                 showLoading(loadingDialog)
-                val imap = IMAPManager(email, password)
+                val imap = IMAPManager(User(email, password))
                 val store = imap.getStore()
                 CoroutineScope(Dispatchers.Main).launch{
                     try{

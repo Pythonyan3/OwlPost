@@ -3,6 +3,7 @@ package com.example.owlpost.models.email
 
 import com.example.owlpost.models.Attachments
 import com.example.owlpost.models.UriManager
+import com.example.owlpost.models.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
@@ -15,7 +16,7 @@ import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
 
-class SMTPManager(private val email: String, private val password: String){
+class SMTPManager(private val user: User){
     private val SMTP_PORT = 465
 
     suspend fun sendMessage(
@@ -29,7 +30,7 @@ class SMTPManager(private val email: String, private val password: String){
         val message = MimeMessage(session)
 
         // init primary message fields
-        message.setFrom(InternetAddress(email))
+        message.setFrom(InternetAddress(user.email))
         message.setRecipient(Message.RecipientType.TO, InternetAddress(recipient))
         message.subject = subject
 
@@ -82,13 +83,13 @@ class SMTPManager(private val email: String, private val password: String){
 
     private fun getSession(): Session {
         val properties = getProperties()
-        val auth = EmailAuthenticator(email, password)
+        val auth = EmailAuthenticator(user.email, user.password)
         return Session.getInstance(properties, auth)
     }
 
     private fun getProperties(): Properties {
         val properties = Properties()
-        properties["mail.smtp.host"] = getEmailHost(email)
+        properties["mail.smtp.host"] = getEmailHost(user.email)
         properties["mail.smtp.starttls.enable"] = "true"
         properties["mail.smtp.ssl.enable"] = "true"
         properties["mail.smtp.port"] = SMTP_PORT
