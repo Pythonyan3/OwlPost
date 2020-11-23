@@ -16,6 +16,7 @@ import com.example.owlpost.databinding.FragmentMailboxBinding
 import com.example.owlpost.models.SettingsException
 import com.example.owlpost.models.email.OwlMessage
 import com.example.owlpost.ui.SEND_EMAIL_REQUEST_CODE
+import com.example.owlpost.ui.adapters.OnMessageItemClickListener
 import com.example.owlpost.ui.adapters.RecyclerMessageItemAdapter
 import com.example.owlpost.ui.shortToast
 import kotlinx.android.synthetic.main.fragment_mailbox.*
@@ -32,7 +33,7 @@ class MailboxFragment: Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentMailboxBinding.inflate(layoutInflater, container, false)
         return binding.root
     }
@@ -68,14 +69,26 @@ class MailboxFragment: Fragment() {
             intent.putExtra("password", activityMain.activeUser.password)
             activityMain.startActivityForResult(intent, SEND_EMAIL_REQUEST_CODE)
         }
-        messageItems?.adapter = RecyclerMessageItemAdapter(messages)
+
+        val adapter = RecyclerMessageItemAdapter(messages, mainActivity.messageEmailColors, mainActivity)
+        adapter.onMessageItemClickListener = object : OnMessageItemClickListener{
+            override fun onItemClick(message: OwlMessage) {
+                mainActivity.mailbox.currentMessage = message
+                mainActivity.supportFragmentManager.beginTransaction()
+                    .addToBackStack(null)
+                    .replace(R.id.fragment_container, MessageFragment())
+                    .commit()
+            }
+        }
+
+        messageItems?.adapter = adapter
         messageItems?.layoutManager = LinearLayoutManager(this.context)
         messageItems.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
                 val layoutManager = recyclerView.layoutManager as LinearLayoutManager
                 if (layoutManager.findLastCompletelyVisibleItemPosition() == messages.size - 1){
-                    if (!isLoading && loadJob.isCompleted){
+                    if (!isLoading && (loadJob.isCompleted || loadJob.isCancelled)){
                         isLoading = true
                         readMessages(messages.size)
                         isLoading = false
@@ -86,6 +99,8 @@ class MailboxFragment: Fragment() {
     }
 
     fun resetMail(){
+        if (this::loadJob.isInitialized && loadJob.isActive)
+            loadJob.cancel()
         messages.clear()
         readMessages()
     }

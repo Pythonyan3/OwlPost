@@ -17,9 +17,33 @@
         android:background="@drawable/oval_background_light"
         android:textAlignment="center"
         android:textSize="30sp"
+        android:layout_marginStart="8dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="1" />
+
+    <TextView
+        android:id="@+id/isEncrypted"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="5dp"
+        android:background="@drawable/ic_encrypted"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/user_icon_text"
+        app:layout_constraintTop_toBottomOf="@id/message_subject" />
+
+    <TextView
+        android:id="@+id/isSigned"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        android:background="@drawable/ic_unverified"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/isEncrypted"
+        app:layout_constraintTop_toBottomOf="@id/message_subject" />
 
 
     <TextView
@@ -56,9 +80,8 @@
         android:textColor="@color/formattingBlack"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/user_icon_text"
-        app:layout_constraintTop_toBottomOf="@+id/message_subject"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintStart_toEndOf="@id/isSigned"
+        app:layout_constraintTop_toBottomOf="@+id/message_subject" />
 
     <TextView
         android:id="@+id/message_date"
@@ -67,5 +90,4 @@
         android:textColor="@color/formattingBlack"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -32,31 +32,29 @@ import java.security.spec.InvalidKeySpecException
 class SettingsFragment: Fragment() {
 
     private lateinit var binding: FragmentSettingsBinding
+    private lateinit var mainActivity: MainActivity
     private lateinit var resetEmailAlertDialog: AlertDialog.Builder
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentSettingsBinding.inflate(layoutInflater, container, false)
+        mainActivity = activity as MainActivity
         return binding.root
     }
 
     override fun onStart() {
         super.onStart()
-        (activity as MainActivity).drawer.disableDrawer()
+        mainActivity.drawer.disableDrawer()
         initFields()
         setListeners()
     }
 
-    private fun initFields() {
-        resetEmailAlertDialog = createResetEmailAlert()
-    }
-
     override fun onStop() {
         super.onStop()
-        (activity as MainActivity).drawer.enableDrawer()
-        (activity as MainActivity).drawer.updateTitle()
+        mainActivity.drawer.enableDrawer()
+        mainActivity.drawer.updateTitle()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -106,6 +104,10 @@ class SettingsFragment: Fragment() {
                 mainActivity.shortToast(mainActivity.getString(R.string.import_export_error))
             }
         }
+    }
+
+    private fun initFields() {
+        resetEmailAlertDialog = createResetEmailAlert()
     }
 
     private fun showFileCreateIntent(requestCode: Int, filename: String = "owlKeys") {

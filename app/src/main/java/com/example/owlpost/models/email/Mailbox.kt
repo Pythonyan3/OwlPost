@@ -17,8 +17,9 @@ class Mailbox(
     user: User
 ) {
     private var managerIMAP: IMAPManager = IMAPManager(user)
-    private var path = "${context.getExternalFilesDir(null)}/$user.email"
+    private var path = "${context.getExternalFilesDir(null)}/${user.email}"
     var currentFolderName: String = "Inbox"
+    lateinit var currentMessage: OwlMessage
 
     suspend fun getFolders(): Array<EmailFolder> {
         val folderNames = readFolderNames()
@@ -63,6 +64,13 @@ class Mailbox(
             result = File(path).deleteRecursively()
         }
         return result
+    }
+
+    fun changeUser(user: User, resetCurrentFolderName: Boolean = false){
+        managerIMAP = IMAPManager(user)
+        path = "${context.getExternalFilesDir(null)}/${user.email}"
+        if (resetCurrentFolderName)
+            currentFolderName = "Inbox"
     }
 
     private fun readMessages(messageUIDs: Array<Long>): Array<OwlMessage>{

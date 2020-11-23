@@ -136,7 +136,7 @@ class SendMailActivity : AppCompatActivity() {
             if (state)
                 Toast.makeText(
                     this@SendMailActivity,
-                    getString(R.string.sign_msg),
+                    getString(R.string.sign_on),
                     Toast.LENGTH_SHORT
                 ).show()
         }
@@ -145,7 +145,7 @@ class SendMailActivity : AppCompatActivity() {
             if (state)
                 Toast.makeText(
                     this@SendMailActivity,
-                    getString(R.string.encryption_msg),
+                    getString(R.string.encryption_on),
                     Toast.LENGTH_SHORT
                 ).show()
         }

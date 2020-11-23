@@ -21,8 +21,8 @@
 
     <!--Toasts messages-->
     <string name="cant_attach_msg">Couldn\'t attach file</string>
-    <string name="sign_msg">Digital signature is enabled</string>
-    <string name="encryption_msg">Encryption is enabled</string>
+    <string name="sign_on">Digital signature is enabled</string>
+    <string name="encryption_on">Encryption is enabled</string>
     <string name="auth_error">Authentication error. Check your credentials</string>
     <string name="internet_connection">No internet connection</string>
     <string name="message_sent">Message sent successful</string>
@@ -111,6 +111,12 @@
     <string name="dialog_yes">Confirm</string>
     <string name="dialog_no">Cancel</string>
 
+    <!--Message Fragment-->
+    <string name="message_to_prefix">To %1$s</string>
+    <string name="no_subject">(No subject)</string>
+    <string name="message_encrypt_info">Message encrypted by OwlPost</string>
+    <string name="message_sign_verified">Message verified by OwlPost</string>
+    <string name="message_sign_unverified">Message unverified! Seems like message was modified</string>
 
     <integer-array name="foregroundColors">
         <item>@color/formattingBlack</item>

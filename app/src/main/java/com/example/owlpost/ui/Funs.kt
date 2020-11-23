@@ -55,19 +55,19 @@ fun AppCompatActivity.showFilePickerIntent(requestCode: Int, type: String = "*/*
 /**
  * Shows Toast
  */
-fun AppCompatActivity.shortToast(message: String){
-        Toast.makeText(
-            this,
-            message,
-            Toast.LENGTH_SHORT
-        ).show()
+fun AppCompatActivity.shortToast(message: String) {
+    Toast.makeText(
+        this,
+        message,
+        Toast.LENGTH_SHORT
+    ).show()
 }
 
-fun showLoading(loadingDialog: LoadingDialog){
+fun showLoading(loadingDialog: LoadingDialog) {
     loadingDialog.show()
 }
 
-fun hideLoading(loadingDialog: LoadingDialog){
+fun hideLoading(loadingDialog: LoadingDialog) {
     loadingDialog.dismiss()
 }
 
@@ -85,6 +85,14 @@ fun setTransparent(color: Int): Int {
         color.green,
         color.blue
     )
+}
+
+fun randomColor(): Int {
+    val random = Random()
+    val r = random.nextInt(220)
+    val g = random.nextInt(220)
+    val b = random.nextInt(220)
+    return Color.argb(160, r, g, b)
 }
 
 fun String.capitalizeWords(): String =

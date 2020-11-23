@@ -28,12 +28,12 @@ import com.mikepenz.materialdrawer.model.interfaces.IProfile
 import java.util.*
 
 class MailDrawer(
-    private val activity: MainActivity,
-    private val toolbar: Toolbar,
-    private val settings: Settings
+    private val activity: MainActivity
 ) {
     private lateinit var drawer: Drawer
     private lateinit var header: AccountHeader
+    private val toolbar = activity.toolbar
+    private val settings = activity.settings
     private val icons = arrayOf(
         ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_1, null),
         ResourcesCompat.getDrawable(activity.resources, R.drawable.ic_user_icon_2, null),
@@ -87,8 +87,9 @@ class MailDrawer(
         header.setActiveProfile(users.indexOf(activeUser.email).toLong())
     }
 
-    fun updateDrawerFolderItems(folders: Array<EmailFolder>, fireOnClick: Boolean = true) {
+    fun updateDrawerFolderItems(folders: Array<EmailFolder>) {
         clearDrawerFolderItems()
+        var idToSelect = 0L
         for (i in folders.indices) {
             val drawerItem = PrimaryDrawerItem().withIdentifier(i.toLong())
                 .withSelectable(true)
@@ -104,9 +105,11 @@ class MailDrawer(
                             .withCornersDp(10)
                     )
             }
+            if (drawerItem.name?.text == activity.mailbox.currentFolderName)
+                idToSelect = i.toLong()
             drawer.addItemAtPosition(drawerItem, i + 1)
         }
-        drawer.setSelection(0, fireOnClick)
+        drawer.setSelection(idToSelect)
     }
 
     fun clearDrawerFolderItems() {
@@ -129,7 +132,7 @@ class MailDrawer(
                     val email = profile.name?.text as String
                     settings.setActiveUser(email)
                     toolbar.title = activity.getString(R.string.app_name)
-                    activity.updateActiveUser()
+                    activity.updateActiveUser(true)
                     return false
                 }
             })
@@ -184,10 +187,11 @@ class MailDrawer(
                                activity.startAddEmailActivity()
                             }
                             102 -> {
+                                // Remove email item click
                                 val profile = header.activeProfile
                                 if (profile != null) {
                                     settings.removeActiveUser()
-                                    activity.updateActiveUser()
+                                    activity.updateActiveUser(true)
                                 }
                             }
                             103 -> {
