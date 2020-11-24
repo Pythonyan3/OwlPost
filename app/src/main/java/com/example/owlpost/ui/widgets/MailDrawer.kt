@@ -105,7 +105,7 @@ class MailDrawer(
                             .withCornersDp(10)
                     )
             }
-            if (drawerItem.name?.text == activity.mailbox.currentFolderName)
+            if (drawerItem.name?.text == activity.mailbox.selectedFolderName)
                 idToSelect = i.toLong()
             drawer.addItemAtPosition(drawerItem, i + 1)
         }
@@ -175,7 +175,7 @@ class MailDrawer(
                         val titleText = drawerItem.name?.text
                         if (titleText != null && toolbar.title != titleText) {
                             toolbar.title = titleText.toString()
-                            activity.mailbox.currentFolderName = titleText.toString()
+                            activity.mailbox.selectedFolderName = titleText.toString()
                             val fragment = activity.supportFragmentManager.findFragmentByTag("mailbox")
                             if (fragment != null)
                                 (fragment as MailboxFragment).resetMail()

@@ -60,7 +60,6 @@ class SettingsFragment: Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK && data != null){
-            val mainActivity = activity as MainActivity
             try {
                 when (requestCode){
                     CREATE_PUBLIC_KEYS_FILE_REQUEST_CODE -> {
@@ -111,7 +110,6 @@ class SettingsFragment: Fragment() {
     }
 
     private fun showFileCreateIntent(requestCode: Int, filename: String = "owlKeys") {
-        val mainActivity = activity as MainActivity
         if (ContextCompat.checkSelfPermission(
                 mainActivity,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -133,7 +131,6 @@ class SettingsFragment: Fragment() {
     }
 
     private fun showFilePickerIntent(requestCode: Int) {
-        val mainActivity = activity as MainActivity
         if (ContextCompat.checkSelfPermission(
                 mainActivity,
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -178,7 +175,6 @@ class SettingsFragment: Fragment() {
     }
 
     private fun createResetEmailAlert(): AlertDialog.Builder {
-        val mainActivity = activity as MainActivity
         val builder = AlertDialog.Builder(ContextThemeWrapper(context, R.style.AppTheme))
         builder.setCancelable(false)
         builder.setTitle(getString(R.string.dialog_title))

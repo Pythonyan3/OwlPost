@@ -20,8 +20,7 @@ import java.util.*
 
 class RecyclerMessageItemAdapter(
     private val messages: ArrayList<OwlMessage?>,
-    private val colors: MutableMap<String, Int>,
-    private val context: Context
+    private val activity: MainActivity
 ) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -56,7 +55,7 @@ class RecyclerMessageItemAdapter(
         when (holder) {
             is MessageViewHolder -> {
                 messages[position]?.let { message ->
-                    holder.bind(message, colors, context)
+                    holder.bind(message, activity)
                 }
 
                 holder.itemView.setOnClickListener{
@@ -88,7 +87,7 @@ class RecyclerMessageItemAdapter(
         private val text = itemView.message_text
         private val date = itemView.message_date
 
-        fun bind(message: OwlMessage, colors: MutableMap<String, Int>, context: Context) {
+        fun bind(message: OwlMessage, activity: MainActivity) {
             icon.text = message.from.subSequence(0 until 1)
             icon.setTextColor(Color.WHITE)
 
@@ -100,13 +99,13 @@ class RecyclerMessageItemAdapter(
 
             from.text = message.from
             subject.text =
-                if (message.subject.isNotEmpty()) message.subject else context.getString(R.string.no_subject)
+                if (message.subject.isNotEmpty()) message.subject else activity.getString(R.string.no_subject)
             date.text = DateFormat.getDateInstance(DateFormat.MEDIUM).format(message.date)
             text.text = message.text
 
-            if (!colors.containsKey(message.from))
-                colors[message.from] = randomColor()
-            colors[message.from]?.let { (icon.background as GradientDrawable).setColor(it) }
+            if (!activity.messageEmailColors.containsKey(message.from))
+                activity.messageEmailColors[message.from] = randomColor()
+            activity.messageEmailColors[message.from]?.let { (icon.background as GradientDrawable).setColor(it) }
 
             val typeface = if (!message.seen) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
             from.typeface = typeface

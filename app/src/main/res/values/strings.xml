@@ -44,6 +44,7 @@
     <string name="folders_dont_exist">Folders don\'t exist</string>
     <string name="offset_error">Offset larger than message count</string>
     <string name="read_message_error">Error was occurred while reading messages</string>
+    <string name="get_folder_error">Error was occurred while getting folder from server</string>
     <string name="no_selected_mailbox">Mailbox is not selected</string>
     <string name="key_type">Unknown key type %1$d</string>
     <string name="access_key_type">Unknown access key type %1$d</string>

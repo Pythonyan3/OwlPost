@@ -13,6 +13,7 @@ import com.example.owlpost.MainActivity
 import com.example.owlpost.R
 import com.example.owlpost.SendMailActivity
 import com.example.owlpost.databinding.FragmentMailboxBinding
+import com.example.owlpost.models.MailboxFolderException
 import com.example.owlpost.models.SettingsException
 import com.example.owlpost.models.email.OwlMessage
 import com.example.owlpost.ui.SEND_EMAIL_REQUEST_CODE
@@ -26,6 +27,7 @@ import javax.mail.MessagingException
 class MailboxFragment: Fragment() {
     private val messages = ArrayList<OwlMessage?>()
     private var isLoading = false
+    private lateinit var syncJob: Job
     private lateinit var loadJob: Job
     private lateinit var binding: FragmentMailboxBinding
     private lateinit var mainActivity: MainActivity
@@ -62,6 +64,22 @@ class MailboxFragment: Fragment() {
                 null
             )
         )
+
+        swipe_refresh.setOnRefreshListener {
+            if (!this::syncJob.isInitialized || (syncJob.isCompleted || syncJob.isCancelled))
+                if (this::loadJob.isInitialized)
+                    syncJob = CoroutineScope(Dispatchers.Main).launch{
+                        loadJob.join()
+                        if (mainActivity.mailbox.syncFolder()){
+                            println("GOT CHANgES DO RESET")
+                            resetMail()
+                        }
+                        else
+                            println("NO changes")
+                        swipe_refresh.isRefreshing = false
+                    }
+        }
+
         newMailActionButton.setOnClickListener{
             val activityMain = activity as MainActivity
             val intent = Intent(activityMain, SendMailActivity::class.java)
@@ -70,10 +88,10 @@ class MailboxFragment: Fragment() {
             activityMain.startActivityForResult(intent, SEND_EMAIL_REQUEST_CODE)
         }
 
-        val adapter = RecyclerMessageItemAdapter(messages, mainActivity.messageEmailColors, mainActivity)
+        val adapter = RecyclerMessageItemAdapter(messages, mainActivity)
         adapter.onMessageItemClickListener = object : OnMessageItemClickListener{
             override fun onItemClick(message: OwlMessage) {
-                mainActivity.mailbox.currentMessage = message
+                mainActivity.selectedMessage = message
                 mainActivity.supportFragmentManager.beginTransaction()
                     .addToBackStack(null)
                     .replace(R.id.fragment_container, MessageFragment())
@@ -110,9 +128,12 @@ class MailboxFragment: Fragment() {
             messages.add(null)
             val progressBarPosition = messages.size - 1
             messageItems.adapter?.notifyDataSetChanged()
-            withContext(Dispatchers.IO){
-                messages.addAll(mainActivity.mailbox.getMessages(offset, msgCount))
+            try {
+                withContext(Dispatchers.IO){
+                    messages.addAll(mainActivity.mailbox.getMessages(offset, msgCount))
+                }
             }
+            catch (e: MailboxFolderException){ }
             messages.removeAt(progressBarPosition)
             messageItems.adapter?.notifyDataSetChanged()
         }

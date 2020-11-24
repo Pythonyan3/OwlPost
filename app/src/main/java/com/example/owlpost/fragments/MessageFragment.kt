@@ -17,23 +17,23 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.MainActivity
 import com.example.owlpost.R
 import com.example.owlpost.databinding.FragmentMessageBinding
-import com.example.owlpost.models.FilenameAttachment
 import com.example.owlpost.models.email.OwlMessage
 import com.example.owlpost.ui.PERMISSIONS_REQUEST_CODE
 import com.example.owlpost.ui.SAVE_ATTACHMENT_REQUEST_CODE
 import com.example.owlpost.ui.adapters.RecyclerReceivedAttachmentsAdapter
 import com.example.owlpost.ui.shortToast
 import kotlinx.android.synthetic.main.fragment_message.*
-import java.io.File
 import java.io.FileNotFoundException
 import java.text.DateFormat
+import javax.mail.BodyPart
+import javax.mail.internet.MimeUtility
 
 
 class MessageFragment : Fragment() {
     private lateinit var binding: FragmentMessageBinding
     private lateinit var mainActivity: MainActivity
     private lateinit var message: OwlMessage
-    private lateinit var attachmentToSave: FilenameAttachment
+    private lateinit var attachmentToSave: BodyPart
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,7 +48,7 @@ class MessageFragment : Fragment() {
         super.onStart()
         mainActivity.drawer.disableDrawer()
         mainActivity.toolbar.title = ""
-        message = mainActivity.mailbox.currentMessage
+        message = mainActivity.selectedMessage
         updateData()
     }
 
@@ -69,11 +69,11 @@ class MessageFragment : Fragment() {
         messageDate.text = DateFormat.getDateInstance(DateFormat.MEDIUM).format(message.date)
         messageTo.text = getString(R.string.message_to_prefix, message.to.joinToString("\n"))
 
-        val adapter = RecyclerReceivedAttachmentsAdapter(message.attachmentsFilenames)
+        val adapter = RecyclerReceivedAttachmentsAdapter(message.attachmentParts)
         adapter.onDownloadClickListener = object: RecyclerReceivedAttachmentsAdapter.OnDownloadClickListener{
-            override fun onDownloadClick(attachment: FilenameAttachment) {
-                attachmentToSave = attachment
-                showFileCreateIntent(attachment)
+            override fun onDownloadClick(bodyPart: BodyPart) {
+                attachmentToSave = bodyPart
+                showFileCreateIntent(bodyPart)
             }
         }
         receivedAttachments?.adapter = adapter
@@ -117,8 +117,7 @@ class MessageFragment : Fragment() {
             when (requestCode){
                 SAVE_ATTACHMENT_REQUEST_CODE -> {
                     try {
-                        val fis = message.getAttachmentInputStream(attachmentToSave.filename)
-                            ?: throw FileNotFoundException("")
+                        val fis = attachmentToSave.inputStream ?: throw FileNotFoundException("")
                         val fos = context?.contentResolver?.openOutputStream(data.data as Uri)
                             ?: throw FileNotFoundException("")
                         fos.write(fis.readBytes())
@@ -134,7 +133,7 @@ class MessageFragment : Fragment() {
         }
     }
 
-    private fun showFileCreateIntent(attachment: FilenameAttachment) {
+    private fun showFileCreateIntent(bodyPart: BodyPart) {
         if (ContextCompat.checkSelfPermission(
                 mainActivity,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -149,8 +148,8 @@ class MessageFragment : Fragment() {
         } else {
             val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             intent.addCategory(Intent.CATEGORY_OPENABLE)
-            intent.type = attachment.mimeType
-            intent.putExtra(Intent.EXTRA_TITLE, attachment.filename)
+            intent.type = bodyPart.contentType.substring(0 until bodyPart.contentType.indexOf(";"))
+            intent.putExtra(Intent.EXTRA_TITLE, MimeUtility.decodeText(bodyPart.fileName))
             startActivityForResult(intent, SAVE_ATTACHMENT_REQUEST_CODE)
         }
     }

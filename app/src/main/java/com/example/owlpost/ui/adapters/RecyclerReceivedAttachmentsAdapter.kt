@@ -5,15 +5,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.owlpost.R
-import com.example.owlpost.models.FilenameAttachment
-import com.example.owlpost.models.UriAttachment
 import kotlinx.android.synthetic.main.received_attachment_item_recyclerview.view.*
-import java.io.File
+import javax.mail.BodyPart
+import javax.mail.internet.MimeUtility
 
-class RecyclerReceivedAttachmentsAdapter(private var attachments: Array<FilenameAttachment>): RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+class RecyclerReceivedAttachmentsAdapter(private var attachments: Array<BodyPart>): RecyclerView.Adapter<RecyclerView.ViewHolder>(){
 
     var onDownloadClickListener = object: OnDownloadClickListener{
-        override fun onDownloadClick(attachment: FilenameAttachment) {}
+        override fun onDownloadClick(bodyPart: BodyPart) {}
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -41,11 +40,13 @@ class RecyclerReceivedAttachmentsAdapter(private var attachments: Array<Filename
         private val filename = itemView.attachment_name
         private val downloadButton = itemView.attachment_download_button
 
-        fun bind(_attachment: FilenameAttachment, listener: OnDownloadClickListener){
-            filename.text = _attachment.filename
-            setIcon(_attachment.mimeType)
+        fun bind(bodyPart: BodyPart, listener: OnDownloadClickListener){
+            filename.text = MimeUtility.decodeText(bodyPart.fileName)
+            setIcon(bodyPart.contentType.substring(
+                0 until bodyPart.contentType.indexOf(";")
+            ))
             downloadButton.setOnClickListener {
-                listener.onDownloadClick(_attachment)
+                listener.onDownloadClick(bodyPart)
             }
         }
 
@@ -60,6 +61,6 @@ class RecyclerReceivedAttachmentsAdapter(private var attachments: Array<Filename
     }
 
     interface OnDownloadClickListener{
-        fun onDownloadClick(attachment: FilenameAttachment)
+        fun onDownloadClick(bodyPart: BodyPart)
     }
 }

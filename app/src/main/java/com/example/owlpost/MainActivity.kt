@@ -2,15 +2,15 @@ package com.example.owlpost
 
 import android.app.Activity
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.example.owlpost.databinding.ActivityMainBinding
 import com.example.owlpost.fragments.MailboxFragment
-import com.example.owlpost.models.email.Mailbox
 import com.example.owlpost.models.Settings
-import com.example.owlpost.models.SettingsException
 import com.example.owlpost.models.User
+import com.example.owlpost.models.email.Mailbox
+import com.example.owlpost.models.email.OwlMessage
 import com.example.owlpost.ui.*
 import com.example.owlpost.ui.widgets.MailDrawer
 import com.google.android.material.snackbar.Snackbar
@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var activeUser: User
     lateinit var drawer: MailDrawer
     lateinit var mailbox: Mailbox
+    lateinit var selectedMessage: OwlMessage
     lateinit var settings: Settings
     lateinit var toolbar: Toolbar
     lateinit var drawerUpdateJob: Job
@@ -62,12 +63,11 @@ class MainActivity : AppCompatActivity() {
         else
             mailbox = Mailbox(this, activeUser)
         drawerUpdateJob = CoroutineScope(Dispatchers.Main).async {
-            try{
+            try {
                 drawer.updateHeaderProfiles(activeUser, settings.usersList())
                 drawer.updateDrawerFolderItems(mailbox.getFolders())
                 firstUpdate = false
-            }
-            catch (e: MessagingException){
+            } catch (e: MessagingException) {
                 drawer.clearDrawerFolderItems()
                 Snackbar.make(
                     this@MainActivity.fragment_container,

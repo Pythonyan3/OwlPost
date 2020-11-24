@@ -1,5 +1,6 @@
 package com.example.owlpost.models.email
 
+import com.example.owlpost.models.MailboxFolderException
 import com.example.owlpost.models.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,7 +20,7 @@ class IMAPManager(var user: User){
     get() = "$PROTOCOL.${user.email.substring(user.email.indexOf("@") + 1)}"
 
 
-    suspend fun folders(): Array<EmailFolder> {
+    suspend fun getFolders(): Array<EmailFolder> {
         val resultFolders = ArrayList<EmailFolder>()
         val store = getStore()
         withContext(Dispatchers.IO){
@@ -57,13 +58,58 @@ class IMAPManager(var user: User){
         }
     }
 
-    fun appendToFolder(msg: MimeMessage, folderName: String){
-        val store = getStore()
-        val sentFolder = store.getFolder(addRootFolder(folderName))
-        sentFolder.open(Folder.READ_WRITE)
-        sentFolder.appendMessages(arrayOf(msg))
-        sentFolder.close(true)
-        store.close()
+    suspend fun syncMessages(uids: LongArray, _folder: EmailFolder, path: String): Boolean{
+        var result = false
+        withContext(Dispatchers.IO){
+            val store = getStore()
+            store.connect(emailHost, user.email, user.password)
+            val folder = store.getFolder(addRootFolder(_folder.folderName))
+            folder.open(Folder.READ_ONLY)
+            val serverFolder = EmailFolder(
+                removeRootFolder(folder.fullName),
+                folder.messageCount,
+                folder.unreadMessageCount
+            )
+            // sync folder info (msg count, unread msg count)
+            val storageFolder = EmailFolder(path, _folder.folderName)
+            if (serverFolder != storageFolder)
+                serverFolder.writeTo(path)
+            val uidFolder = folder as UIDFolder
+
+            // sync deleted message
+            val messages = uidFolder.getMessagesByUID(uids)
+            for (i in messages.indices){
+                if (messages[i] == null){
+                    _folder.removeMessage(uids[i], path)
+                    result = true
+                }
+                else{
+                    val storeMsg = OwlMessage(path, _folder.folderName, uids[i])
+                    if (messages[i].flags != storeMsg.flags){
+                        storeMsg.flags = messages[i].flags
+                        storeMsg.writeTo(path)
+                        result = true
+                    }
+                }
+            }
+            // sync new messages
+            val lastMessage = folder.getMessage(folder.messageCount)
+            val lastMsgUID = uidFolder.getUID(lastMessage)
+            if (lastMsgUID > uids[0]){
+                uidFolder.getMessagesByUID(uids[0] + 1, lastMsgUID).forEach { newMessage ->
+                    OwlMessage(
+                        uidFolder.getUID(newMessage),
+                        _folder.folderName,
+                        newMessage as MimeMessage
+                    ).writeTo(path)
+                }
+                result = true
+            }
+
+            folder.close(false)
+            store.close()
+        }
+        return result
     }
 
     private fun addRootFolder(folderName: String): String{

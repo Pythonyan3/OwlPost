@@ -1,18 +1,13 @@
 package com.example.owlpost.models.email
 
 
-import android.net.Uri
-import com.example.owlpost.models.FilenameAttachment
 import java.io.File
-import java.io.FilenameFilter
-import java.io.InputStream
 import java.lang.NullPointerException
 import java.util.*
 import javax.mail.*
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
-import javax.mail.internet.MimeUtility
 import kotlin.collections.ArrayList
 
 
@@ -37,7 +32,13 @@ class OwlMessage {
     val signed: Boolean get() = message.getHeader("owl_sign") != null
     val text get() = parseText("text/plain")
     val html get() = parseText("text/html")
-    val attachmentsFilenames get() = parseAttachmentsFilenames()
+    val attachmentParts get() = parseAttachmentsParts()
+    var flags: Flags
+    get() = message.flags
+    set(value) {
+        message.setFlags(message.flags, false)
+        message.setFlags(value, true)
+    }
     private val message: MimeMessage
 
     val to: Array<String> get() {
@@ -76,29 +77,14 @@ class OwlMessage {
         message.writeTo(fos)
     }
 
-    fun getAttachmentInputStream(filename: String): InputStream? {
-        if (message.isMimeType("multipart/*")){
-            val multipart = message.content as MimeMultipart
-            for (i in 0 until multipart.count){
-                val bodyPart = multipart.getBodyPart(i)
-                if (Part.ATTACHMENT.equals(bodyPart.disposition, true) && MimeUtility.decodeText(bodyPart.fileName) == filename)
-                    return bodyPart.inputStream
-            }
-        }
-        return null
-    }
-
-    private fun parseAttachmentsFilenames(): Array<FilenameAttachment>{
-        val result = ArrayList<FilenameAttachment>()
+    private fun parseAttachmentsParts(): Array<BodyPart>{
+        val result = ArrayList<BodyPart>()
         if (message.isMimeType("multipart/*")){
             val multipart = message.content as MimeMultipart
             for (i in 0 until multipart.count){
                 val bodyPart = multipart.getBodyPart(i)
                 if (Part.ATTACHMENT.equals(bodyPart.disposition, true))
-                    result.add(FilenameAttachment(
-                        MimeUtility.decodeText(bodyPart.fileName),
-                        bodyPart.contentType.substring(0 until bodyPart.contentType.indexOf(";"))
-                    ))
+                    result.add(bodyPart)
             }
         }
         return result.toTypedArray()
