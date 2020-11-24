@@ -1,8 +1,8 @@
 package com.example.owlpost.models.email
 
 
-import com.example.owlpost.models.Attachments
-import com.example.owlpost.models.UriManager
+import com.example.owlpost.models.SendAttachments
+import com.example.owlpost.models.UriAttachment
 import com.example.owlpost.models.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,7 +22,7 @@ class SMTPManager(private val user: User){
     suspend fun sendMessage(
         recipient: String,
         subject: String,
-        attachments: Attachments,
+        attachments: SendAttachments,
         plainText: String,
         html: String = ""
     ){
@@ -69,7 +69,7 @@ class SMTPManager(private val user: User){
         return bodyPart
     }
 
-    private fun getAttachmentBodyPart(uri: UriManager): MimeBodyPart {
+    private fun getAttachmentBodyPart(uri: UriAttachment): MimeBodyPart {
         val bytes: ByteArray
         val inputStream = uri.getInputStream()
         bytes = inputStream?.readBytes() as ByteArray

@@ -14,7 +14,7 @@ import java.nio.file.Files
 
 
 @SuppressLint("Recycle")
-class UriManager(val uri: Uri, private val context: Context) {
+class UriAttachment(val uri: Uri, private val context: Context) {
 
     var filename: String = ""
     var size: Long = 0L
@@ -60,7 +60,7 @@ class UriManager(val uri: Uri, private val context: Context) {
             context.contentResolver.getType(uri).toString()
         else{
             val file = File(URI(uri.toString()))
-            URLConnection.guessContentTypeFromName(file.name);
+            URLConnection.guessContentTypeFromName(file.name)
         }
     }
 

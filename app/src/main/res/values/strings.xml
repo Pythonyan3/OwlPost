@@ -31,6 +31,8 @@
     <string name="import_export_error">Cannot complete operations, cannot access selected file</string>
     <string name="export_success">Keys exported successful</string>
     <string name="import_success">Keys imported successful</string>
+    <string name="file_saved_success">File saved successful</string>
+    <string name="file_saved_error">Cannot save file</string>
 
     <!--Exceptions messages-->
     <string name="attachment_size">File exceed total attachments size %1$dMb</string>

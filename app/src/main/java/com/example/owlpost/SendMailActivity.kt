@@ -23,7 +23,7 @@ import com.example.owlpost.models.*
 import com.example.owlpost.models.email.SMTPManager
 import com.example.owlpost.ui.*
 import com.example.owlpost.ui.adapters.ColorSpinnerAdapter
-import com.example.owlpost.ui.adapters.RecyclerAttachmentsAdapter
+import com.example.owlpost.ui.adapters.RecyclerSendAttachmentsAdapter
 import com.example.owlpost.ui.widgets.LoadingDialog
 import com.example.owlpost.ui.widgets.OnSelectionChangedListener
 import com.google.android.material.snackbar.Snackbar
@@ -42,7 +42,7 @@ class SendMailActivity : AppCompatActivity() {
     private lateinit var spanEditor: SpanEditor
     private lateinit var foregroundColors: Array<Int>
     private lateinit var backgroundColors: Array<Int>
-    private lateinit var attachments: Attachments
+    private lateinit var attachments: SendAttachments
     private lateinit var loadingDialog: LoadingDialog
     private lateinit var user: User
 
@@ -91,13 +91,8 @@ class SendMailActivity : AppCompatActivity() {
             }
     }
 
-    /**
-     * Makes an instance of UriWrapper
-     * Gets some data by uri (filename, size)
-     * Try to open InputStream
-     */
-    private suspend fun getAttachment(data: Intent): UriManager {
-        val uri = UriManager(data.data as Uri, this)
+    private suspend fun getAttachment(data: Intent): UriAttachment {
+        val uri = UriAttachment(data.data as Uri, this)
         withContext(Dispatchers.IO){
             val fis = uri.getInputStream() ?: throw FileNotFoundException("")
             fis.close()
@@ -119,12 +114,12 @@ class SendMailActivity : AppCompatActivity() {
             this.resources.getIntArray(R.array.foregroundColors).toList().toTypedArray()
         backgroundColors =
             this.resources.getIntArray(R.array.backgroundColors).toList().toTypedArray()
-        attachments = Attachments(this)
+        attachments = SendAttachments(this)
     }
 
     private fun initViewsListeners() {
         attachmentsRecycleView.layoutManager = LinearLayoutManager(this@SendMailActivity)
-        attachmentsRecycleView.adapter = RecyclerAttachmentsAdapter(attachments)
+        attachmentsRecycleView.adapter = RecyclerSendAttachmentsAdapter(attachments)
 
         setSupportActionBar(sendmail_toolbar)
 
