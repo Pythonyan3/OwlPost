@@ -93,19 +93,20 @@ class IMAPManager(var user: User){
                 }
             }
             // sync new messages
-            val lastMessage = folder.getMessage(folder.messageCount)
-            val lastMsgUID = uidFolder.getUID(lastMessage)
-            if (lastMsgUID > uids[0]){
-                uidFolder.getMessagesByUID(uids[0] + 1, lastMsgUID).forEach { newMessage ->
-                    OwlMessage(
-                        uidFolder.getUID(newMessage),
-                        _folder.folderName,
-                        newMessage as MimeMessage
-                    ).writeTo(path)
+            if (uids.isNotEmpty()){
+                val lastMessage = folder.getMessage(folder.messageCount)
+                val lastMsgUID = uidFolder.getUID(lastMessage)
+                if (lastMsgUID > uids[0]){
+                    uidFolder.getMessagesByUID(uids[0] + 1, lastMsgUID).forEach { newMessage ->
+                        OwlMessage(
+                            uidFolder.getUID(newMessage),
+                            _folder.folderName,
+                            newMessage as MimeMessage
+                        ).writeTo(path)
+                    }
+                    result = true
                 }
-                result = true
             }
-
             folder.close(false)
             store.close()
         }

@@ -4,6 +4,8 @@ import android.util.Base64
 import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 
 
 const val ASYMMETRIC_ENCRYPT_ALGORITHM = "RSA"
@@ -14,7 +16,13 @@ const val PUBLIC_KEY = 0x04
 const val PRIVATE_KEY = 0x08
 
 
-class KeysManager{
+class OwlKeysManager{
+    fun generateSecretKey(algorithm: String = SYMMETRIC_ENCRYPT_ALGORITHM): SecretKey{
+        val keyGen = KeyGenerator.getInstance(algorithm)
+        keyGen.init(256)
+        return keyGen.generateKey()
+    }
+
     fun generateKeysPair(algorithm: String = ASYMMETRIC_ENCRYPT_ALGORITHM): KeyPair {
         val keyPairGenerator = KeyPairGenerator.getInstance(algorithm)
         keyPairGenerator.initialize(2048)
@@ -43,5 +51,9 @@ class KeysManager{
         val keySpec = PKCS8EncodedKeySpec(bytes)
         val keyFactory = KeyFactory.getInstance(algorithm)
         return keyFactory.generatePrivate(keySpec)
+    }
+
+    fun encryptSecretKey(secretKey: SecretKey, publicKey: PublicKey){
+
     }
 }

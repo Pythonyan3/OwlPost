@@ -101,7 +101,7 @@ class RecyclerMessageItemAdapter(
             subject.text =
                 if (message.subject.isNotEmpty()) message.subject else activity.getString(R.string.no_subject)
             date.text = DateFormat.getDateInstance(DateFormat.MEDIUM).format(message.date)
-            text.text = message.text
+            text.text = if (message.encrypted) "" else message.text
 
             if (!activity.messageEmailColors.containsKey(message.from))
                 activity.messageEmailColors[message.from] = randomColor()

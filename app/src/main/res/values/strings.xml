@@ -9,6 +9,7 @@
     <string name="loading_title_add">Adding email…</string>
     <string name="loading_title_attach">Attaching file…</string>
     <string name="loading_title_sending">Sending message…</string>
+    <string name="loading_title_decrypt">Decrypting message…</string>
 
     <string name="empty_fields">Enter all of required data</string>
     <string name="incorrect_email">Email address is incorrect</string>
@@ -23,6 +24,8 @@
     <string name="cant_attach_msg">Couldn\'t attach file</string>
     <string name="sign_on">Digital signature is enabled</string>
     <string name="encryption_on">Encryption is enabled</string>
+    <string name="no_recipient">Enter recipient email address</string>
+    <string name="recipient_email_error">Recipient\'s email address is incorrect</string>
     <string name="auth_error">Authentication error. Check your credentials</string>
     <string name="internet_connection">No internet connection</string>
     <string name="message_sent">Message sent successful</string>

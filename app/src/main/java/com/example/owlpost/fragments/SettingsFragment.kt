@@ -179,7 +179,7 @@ class SettingsFragment: Fragment() {
         builder.setCancelable(false)
         builder.setTitle(getString(R.string.dialog_title))
         builder.setMessage(getString(R.string.dialog_message))
-        builder.setPositiveButton(getString(R.string.dialog_yes)) { dialogInterface: DialogInterface, i: Int ->
+        builder.setPositiveButton(getString(R.string.dialog_yes)) { _: DialogInterface, _: Int ->
             CoroutineScope(Dispatchers.Main).launch {
                 if (mainActivity.mailbox.resetMailbox()){
                     mainActivity.settings.removeActiveUser(true)

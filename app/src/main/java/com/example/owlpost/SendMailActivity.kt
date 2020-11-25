@@ -20,6 +20,10 @@ import androidx.core.text.toHtml
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.models.*
+import com.example.owlpost.models.cryptography.ENCRYPT_KEY
+import com.example.owlpost.models.cryptography.SIGN_KEY
+import com.example.owlpost.models.email.MimeMessageManager
+import com.example.owlpost.models.email.OwlMessage
 import com.example.owlpost.models.email.SMTPManager
 import com.example.owlpost.ui.*
 import com.example.owlpost.ui.adapters.ColorSpinnerAdapter
@@ -158,34 +162,13 @@ class SendMailActivity : AppCompatActivity() {
             val toEmail = toEmails.text.toString()
             val subject = subject.text.toString()
             val plainText = messageBody.text.toString()
-            val html = messageBody.text?.toHtml().toString()
-            if (toEmail.isNotEmpty() && isValidEmail(toEmail)){
-                loadingDialog.setTitle(getString(R.string.loading_title_sending))
-                showLoading(loadingDialog)
-                val smtp = SMTPManager(user)
-                CoroutineScope(Dispatchers.Main).launch {
-                    try {
-                        smtp.sendMessage(toEmail, subject, attachments, plainText, html)
-                        setResult(RESULT_OK)
-                        this@SendMailActivity.finish()
-                    }
-                    catch (e: AuthenticationFailedException){
-                        shortToast(getString(R.string.auth_error))
-                    }
-                    catch (e: MessagingException){
-                        println(e.message)
-                        Snackbar.make(
-                            this@SendMailActivity.
-                            constraintLayout,
-                            getString(R.string.internet_connection),
-                            Snackbar.LENGTH_LONG
-                        ).show()
-                    }
-                    finally {
-                        hideLoading(loadingDialog)
-                    }
-                }
-            }
+            val html = if (plainText.isNotEmpty()) messageBody.text?.toHtml().toString() else ""
+            if (toEmail.isEmpty())
+                shortToast(getString(R.string.no_recipient))
+            else if (!isValidEmail(toEmail))
+                shortToast(getString(R.string.recipient_email_error))
+            else
+                sendMessage(toEmail, subject, plainText, html)
         }
 
         messageBody.setOnFocusChangeListener { _: View, isFocused: Boolean ->
@@ -259,6 +242,47 @@ class SendMailActivity : AppCompatActivity() {
         close_format_panel_btn.setOnClickListener {
             showFormatPanel.isChecked = false
             formatting_panel.visibility = View.GONE
+        }
+    }
+
+    private fun sendMessage(
+        toEmail: String,
+        subject: String,
+        plainText: String,
+        html: String
+    ){
+        loadingDialog.setTitle(getString(R.string.loading_title_sending))
+        val managerSMTP = SMTPManager(user)
+        val mimeMessage = managerSMTP.getMimeMessage(toEmail, subject, attachments, plainText, html)
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                showLoading(loadingDialog)
+                val message = OwlMessage(mimeMessage)
+                if (doEncrypt.isChecked)
+                    message.encrypt(settings.getSubscriberPublicKey(user.email, toEmail, ENCRYPT_KEY))
+                if (doEcp.isChecked)
+                    message.sign(settings.getPrivateKey(user.email, SIGN_KEY))
+                managerSMTP.sendMessage(message)
+                setResult(RESULT_OK)
+                this@SendMailActivity.finish()
+            }
+            catch (e: AuthenticationFailedException){
+                shortToast(getString(R.string.auth_error))
+            }
+            catch (e: MessagingException){
+                Snackbar.make(
+                    this@SendMailActivity.
+                    constraintLayout,
+                    getString(R.string.internet_connection),
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+            catch (e: SettingsException){
+                shortToast("NEED KEYS TRADE")
+            }
+            finally {
+                hideLoading(loadingDialog)
+            }
         }
     }
 

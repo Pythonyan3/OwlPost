@@ -70,12 +70,8 @@ class MailboxFragment: Fragment() {
                 if (this::loadJob.isInitialized)
                     syncJob = CoroutineScope(Dispatchers.Main).launch{
                         loadJob.join()
-                        if (mainActivity.mailbox.syncFolder()){
-                            println("GOT CHANgES DO RESET")
+                        if (mainActivity.mailbox.syncFolder())
                             resetMail()
-                        }
-                        else
-                            println("NO changes")
                         swipe_refresh.isRefreshing = false
                     }
         }

@@ -16,69 +16,27 @@ import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
 
-class SMTPManager(private val user: User){
-    private val SMTP_PORT = 465
+const val SMTP_PORT = 465
 
-    suspend fun sendMessage(
+class SMTPManager(private val user: User){
+
+    suspend fun sendMessage(message: OwlMessage){
+        withContext(Dispatchers.IO){
+            Transport.send(message.message)
+        }
+    }
+
+    fun getMimeMessage(
         recipient: String,
         subject: String,
         attachments: SendAttachments,
         plainText: String,
-        html: String = ""
-    ){
-        val session = getSession()
-        val message = MimeMessage(session)
-
-        // init primary message fields
-        message.setFrom(InternetAddress(user.email))
-        message.setRecipient(Message.RecipientType.TO, InternetAddress(recipient))
-        message.subject = subject
-
-        // create multipart
-        val multiPart = MimeMultipart("alternative")
-
-        // create plain text body part
-        // if html given create html text body part and set alternative subtype
-        val plainTextBodyPart = getPlainTextBodyPart(plainText)
-        multiPart.addBodyPart(plainTextBodyPart)
-        val htmlBodyPart = getHTMLBodyPart(html)
-        multiPart.addBodyPart(htmlBodyPart)
-
-        //TODO digital signature
-        withContext(Dispatchers.IO) {
-            for (i in 0 until attachments.size) {
-                val attachmentBodyPart = getAttachmentBodyPart(attachments[i])
-                multiPart.addBodyPart(attachmentBodyPart)
-            }
-            message.setContent(multiPart)
-            Transport.send(message)
-        }
-    }
-
-    private fun getPlainTextBodyPart(text: String): MimeBodyPart {
-        val bodyPart = MimeBodyPart()
-        bodyPart.setContent(text, "text/plain; charset=utf-8")
-        bodyPart.setHeader("Content-Transfer-Encoding", "base64")
-        return bodyPart
-    }
-
-    private fun getHTMLBodyPart(text: String): MimeBodyPart {
-        val bodyPart = MimeBodyPart()
-        bodyPart.setContent(text, "text/html; charset=utf-8")
-        bodyPart.setHeader("Content-Transfer-Encoding", "base64")
-        return bodyPart
-    }
-
-    private fun getAttachmentBodyPart(uri: UriAttachment): MimeBodyPart {
-        val bytes: ByteArray
-        val inputStream = uri.getInputStream()
-        bytes = inputStream?.readBytes() as ByteArray
-        inputStream.close()
-        val attachmentBodyPart = MimeBodyPart()
-        val bytesDataSource = ByteArrayDataSource(bytes, uri.getType())
-        attachmentBodyPart.dataHandler = DataHandler(bytesDataSource)
-        attachmentBodyPart.fileName = uri.filename
-        return attachmentBodyPart
+        html: String
+    ): MimeMessage {
+        val manager = MimeMessageManager()
+        val mimeMessage = MimeMessage(getSession())
+        manager.buildMimeMessage(mimeMessage, user.email, recipient, subject, attachments, plainText, html)
+        return mimeMessage
     }
 
     private fun getSession(): Session {

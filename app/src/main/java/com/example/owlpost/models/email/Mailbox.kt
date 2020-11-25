@@ -14,7 +14,7 @@ class Mailbox(
     user: User
 ) {
     private var managerIMAP: IMAPManager = IMAPManager(user)
-    private var path = "${context.getExternalFilesDir(null)}/${user.email}"
+    var path = "${context.getExternalFilesDir(null)}/${user.email}"
     private var selectedFolder: EmailFolder
     get() = EmailFolder(path, selectedFolderName)
     set(value) {}
@@ -56,7 +56,7 @@ class Mailbox(
         managerIMAP = IMAPManager(user)
         path = "${context.getExternalFilesDir(null)}/${user.email}"
         if (resetCurrentFolderName)
-            selectedFolder = EmailFolder(path, "Inbox")
+            selectedFolderName = "Inbox"
     }
 
     private fun readFolders(): Array<EmailFolder>? {

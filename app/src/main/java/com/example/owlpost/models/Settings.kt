@@ -13,6 +13,7 @@ import java.security.PublicKey
 private const val USERS_LIST_STORAGE_NAME = "users_info"
 private const val USERS_LIST_STRING_KEY = "users_list"
 private const val ACTIVE_USER_STRING_KEY = "active_user"
+private const val SUBSCRIBER_KEYS_STRING_KEY = "_subscriber_keys"
 private const val USER_PASSWORD_STRING_KEY = "password"
 private const val PUBLIC_ENCRYPT_STRING_KEY = "publicEncryptKey"
 private const val PRIVATE_ENCRYPT_STRING_KEY = "privateEncryptKey"
@@ -75,7 +76,7 @@ class Settings(private val context: Context) {
         newUserSettings.edit(commit = true){
             putString(USER_PASSWORD_STRING_KEY, user.password)
             if (newUserSettings.getString(PUBLIC_ENCRYPT_STRING_KEY, null) == null){
-                val manager = KeysManager()
+                val manager = OwlKeysManager()
                 // encryption key pair
                 val encryptKeyPair = manager.generateKeysPair("RSA")
                 val signKeyPair = manager.generateKeysPair("RSA")
@@ -104,26 +105,34 @@ class Settings(private val context: Context) {
     }
 
     fun getPublicKey(email: String, keyWorkType: Int): PublicKey{
-        val manager = KeysManager()
+        val manager = OwlKeysManager()
         val base64Key = readKeyString(email, keyWorkType or PUBLIC_KEY)
         return manager.publicKeyBase64StringDecode(base64Key, ASYMMETRIC_ENCRYPT_ALGORITHM)
     }
 
     fun getPrivateKey(email: String, keyWorkType: Int): PrivateKey {
-        val manager = KeysManager()
+        val manager = OwlKeysManager()
         val base64Key = readKeyString(email, keyWorkType or PRIVATE_KEY)
         return manager.privateKeyBase64StringDecode(base64Key, ASYMMETRIC_ENCRYPT_ALGORITHM)
     }
 
+    fun getSubscriberPublicKey(email: String, subscriber: String, keyWorkType: Int): PublicKey {
+        if (email == subscriber)
+            return getPublicKey(email, keyWorkType)
+        val manager = OwlKeysManager()
+        val base64Key = readSubscriberKeyString(email, subscriber)
+        return manager.publicKeyBase64StringDecode(base64Key, ASYMMETRIC_ENCRYPT_ALGORITHM)
+    }
+
     private fun putKeys(email: String, encryptKey: PublicKey, signKey: PublicKey){
-        val manager = KeysManager()
+        val manager = OwlKeysManager()
         val base64EncryptKey = manager.encodeKeyToBase64String(encryptKey)
         val base64SignKey = manager.encodeKeyToBase64String(signKey)
         putKeyStrings(email, base64EncryptKey, base64SignKey, PUBLIC_KEY)
     }
 
     private fun putKeys(email: String, encryptKey: PrivateKey, signKey: PrivateKey){
-        val manager = KeysManager()
+        val manager = OwlKeysManager()
         val base64EncryptKey = manager.encodeKeyToBase64String(encryptKey)
         val base64SignKey = manager.encodeKeyToBase64String(signKey)
         putKeyStrings(email, base64EncryptKey, base64SignKey, PRIVATE_KEY)
@@ -167,6 +176,15 @@ class Settings(private val context: Context) {
         }
     }
 
+    private fun readSubscriberKeyString(email: String, subscriber: String): String{
+        val newUserSettings = context.getSharedPreferences(
+            "$email$SUBSCRIBER_KEYS_STRING_KEY",
+            Context.MODE_PRIVATE
+        )
+        return newUserSettings.getString(subscriber, null)
+            ?: throw SettingsException("No subscriber's key")
+    }
+
     fun writeKeysToFile(email:String, uri: Uri, accessKeyType: Int){
         val base64EncryptKey = readKeyString(email, accessKeyType or ENCRYPT_KEY).toByteArray()
         val base64SignKey = readKeyString(email, accessKeyType or SIGN_KEY).toByteArray()
@@ -200,7 +218,7 @@ class Settings(private val context: Context) {
         fis.close()
 
         // put keys in to settings
-        val manager = KeysManager()
+        val manager = OwlKeysManager()
         val base64EncryptKey = String(encryptBytes)
         val base64SignKey = String(signBytes)
         when (accessKeyType){
