@@ -2,6 +2,8 @@ package com.example.owlpost.fragments
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.GradientDrawable
@@ -20,16 +22,22 @@ import com.example.owlpost.databinding.FragmentMessageBinding
 import com.example.owlpost.models.cryptography.ENCRYPT_KEY
 import com.example.owlpost.models.cryptography.SIGN_KEY
 import com.example.owlpost.models.email.OwlMessage
+import com.example.owlpost.models.email.SMTPManager
 import com.example.owlpost.ui.*
 import com.example.owlpost.ui.adapters.RecyclerReceivedAttachmentsAdapter
 import com.example.owlpost.ui.widgets.LoadingDialog
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_send_mail.*
 import kotlinx.android.synthetic.main.fragment_message.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 import java.text.DateFormat
+import javax.mail.AuthenticationFailedException
 import javax.mail.BodyPart
+import javax.mail.MessagingException
 import javax.mail.internet.MimeUtility
 
 
@@ -39,6 +47,7 @@ class MessageFragment : Fragment() {
     private lateinit var message: OwlMessage
     private lateinit var attachmentToSave: BodyPart
     private lateinit var loadingDialog: LoadingDialog
+    private lateinit var confirmDialog: AlertDialog.Builder
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -53,7 +62,73 @@ class MessageFragment : Fragment() {
         mainActivity = activity as MainActivity
         message = mainActivity.selectedMessage.copy(mainActivity.mailbox.path)
         loadingDialog = LoadingDialog(mainActivity)
+        confirmDialog = createConfirmAlertDialog(mainActivity)
+        confirmDialog.setPositiveButton(getString(R.string.dialog_yes)) {_: DialogInterface, _: Int ->
+            if (message.isExchangeResponse){ // only save subscriber keys
+                mainActivity.settings.putSubscriberKeys(
+                    mainActivity.activeUser.email,
+                    message.from,
+                    message.exchangeEncryptionKey,
+                    message.exchangeSignKey
+                )
+            }
+            else if (message.isExchangeRequest){ // save subscriber keys and send own keys
+                CoroutineScope(Dispatchers.Main).launch {
+                    loadingDialog.setTitle(getString(R.string.loading_title_response))
+                    loadingDialog.show()
+                    mainActivity.settings.putSubscriberKeys(
+                        mainActivity.activeUser.email,
+                        message.from,
+                        message.exchangeEncryptionKey,
+                        message.exchangeSignKey
+                    )
+
+                    val publicEncryptionKey = mainActivity.settings.getPublicKeyString(
+                        mainActivity.activeUser.email,
+                        ENCRYPT_KEY
+                    )
+                    val publicSignKey = mainActivity.settings.getPublicKeyString(
+                        mainActivity.activeUser.email,
+                        SIGN_KEY
+                    )
+                    val managerSMTP = SMTPManager(mainActivity.activeUser)
+                    val message = managerSMTP.getSendExchangeResponseMessage(
+                        message.from,
+                        publicEncryptionKey,
+                        publicSignKey
+                    )
+                    try {
+                        managerSMTP.sendMessage(message)
+                        mainActivity.shortToast(getString(R.string.response_sent))
+                    }
+                    catch (e: AuthenticationFailedException){
+                        mainActivity.shortToast(getString(R.string.auth_error))
+                    }
+                    catch (e: MessagingException){
+                        Snackbar.make(
+                            mainActivity.fragment_container,
+                            getString(R.string.internet_connection),
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                    finally {
+                        loadingDialog.dismiss()
+                    }
+                }
+            }
+        }
         updateData()
+    }
+
+    private fun checkRequestResponse() {
+        if (message.isExchangeRequest){
+            confirmDialog.setMessage(R.string.accept_request_dialog_message)
+            confirmDialog.show()
+        }
+        else if (message.isExchangeResponse){
+            confirmDialog.setMessage(R.string.accept_response_dialog_message)
+            confirmDialog.show()
+        }
     }
 
     override fun onStart() {
@@ -71,7 +146,7 @@ class MessageFragment : Fragment() {
     private fun updateData() {
         CoroutineScope(Dispatchers.Main).launch {
             loadingDialog.setTitle(getString(R.string.loading_title_decrypt))
-            showLoading(loadingDialog)
+            loadingDialog.show()
             updateSignInfo()
             updateEncryptedInfo()
 
@@ -96,7 +171,8 @@ class MessageFragment : Fragment() {
             receivedAttachments?.layoutManager = LinearLayoutManager(this@MessageFragment.context)
 
             updateContent()
-            hideLoading(loadingDialog)
+            loadingDialog.dismiss()
+            checkRequestResponse()
         }
     }
 

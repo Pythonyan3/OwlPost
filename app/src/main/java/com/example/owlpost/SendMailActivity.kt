@@ -2,6 +2,8 @@ package com.example.owlpost
 
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Typeface
@@ -22,7 +24,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.owlpost.models.*
 import com.example.owlpost.models.cryptography.ENCRYPT_KEY
 import com.example.owlpost.models.cryptography.SIGN_KEY
-import com.example.owlpost.models.email.MimeMessageManager
 import com.example.owlpost.models.email.OwlMessage
 import com.example.owlpost.models.email.SMTPManager
 import com.example.owlpost.ui.*
@@ -48,7 +49,10 @@ class SendMailActivity : AppCompatActivity() {
     private lateinit var backgroundColors: Array<Int>
     private lateinit var attachments: SendAttachments
     private lateinit var loadingDialog: LoadingDialog
+    private lateinit var confirmDialog: AlertDialog.Builder
+    private lateinit var managerSMTP: SMTPManager
     private lateinit var user: User
+    private var emailToRequest: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +67,7 @@ class SendMailActivity : AppCompatActivity() {
             CoroutineScope(Dispatchers.Main).launch {
                 try {
                     loadingDialog.setTitle(getString(R.string.loading_title_attach))
-                    showLoading(loadingDialog)
+                    loadingDialog.show()
                     val attachment = getAttachment(data)
                     attachments.add(attachment)
                     attachmentsRecycleView.adapter?.notifyDataSetChanged()
@@ -76,7 +80,7 @@ class SendMailActivity : AppCompatActivity() {
                 } catch (e: AttachmentsSizeException) {
                     e.message?.let { shortToast(it) }
                 } finally {
-                    hideLoading(loadingDialog)
+                    loadingDialog.dismiss()
                 }
             }
         }
@@ -106,10 +110,12 @@ class SendMailActivity : AppCompatActivity() {
 
     private fun initFields() {
         val intent = intent
+        confirmDialog = createConfirmAlertDialog(this)
         user = User(
             intent.getStringExtra("email").toString(),
             intent.getStringExtra("password").toString()
         )
+        managerSMTP = SMTPManager(user)
         settings = Settings(this)
         spanEditor = SpanEditor(messageBody.text as SpannableStringBuilder)
         loadingDialog = LoadingDialog(this)
@@ -122,6 +128,41 @@ class SendMailActivity : AppCompatActivity() {
     }
 
     private fun initViewsListeners() {
+        confirmDialog.setPositiveButton(getString(R.string.dialog_yes)) { _: DialogInterface, _: Int ->
+            CoroutineScope(Dispatchers.Main).launch {
+                try{
+                    loadingDialog.setTitle(getString(R.string.loading_title_request))
+                    loadingDialog.show()
+                    val publicEncryptionKey = settings.getPublicKeyString(user.email, ENCRYPT_KEY)
+                    val publicSignKey = settings.getPublicKeyString(user.email, SIGN_KEY)
+                    val managerSMTP = SMTPManager(user)
+                    val message = managerSMTP.getSendExchangeRequestMessage(
+                        emailToRequest,
+                        publicEncryptionKey,
+                        publicSignKey
+                    )
+                    managerSMTP.sendMessage(message)
+                    shortToast(getString(R.string.request_sent))
+                }
+                catch (e: AuthenticationFailedException){
+                    println(e.message)
+                    shortToast(getString(R.string.auth_error))
+                }
+                catch (e: MessagingException){
+                    println(e.message)
+                    Snackbar.make(
+                        this@SendMailActivity.
+                        constraintLayout,
+                        getString(R.string.internet_connection),
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+                finally {
+                    loadingDialog.dismiss()
+                }
+            }
+        }
+
         attachmentsRecycleView.layoutManager = LinearLayoutManager(this@SendMailActivity)
         attachmentsRecycleView.adapter = RecyclerSendAttachmentsAdapter(attachments)
 
@@ -252,17 +293,18 @@ class SendMailActivity : AppCompatActivity() {
         html: String
     ){
         loadingDialog.setTitle(getString(R.string.loading_title_sending))
-        val managerSMTP = SMTPManager(user)
         val mimeMessage = managerSMTP.getMimeMessage(toEmail, subject, attachments, plainText, html)
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                showLoading(loadingDialog)
+                loadingDialog.show()
                 val message = OwlMessage(mimeMessage)
                 if (doEncrypt.isChecked)
                     message.encrypt(settings.getSubscriberPublicKey(user.email, toEmail, ENCRYPT_KEY))
-                if (doEcp.isChecked)
+                if (doEcp.isChecked){
+                    settings.getSubscriberPublicKey(user.email, toEmail, SIGN_KEY)
                     message.sign(settings.getPrivateKey(user.email, SIGN_KEY))
-                managerSMTP.sendMessage(message)
+                }
+                managerSMTP.sendMessage(message.message)
                 setResult(RESULT_OK)
                 this@SendMailActivity.finish()
             }
@@ -278,10 +320,12 @@ class SendMailActivity : AppCompatActivity() {
                 ).show()
             }
             catch (e: SettingsException){
-                shortToast("NEED KEYS TRADE")
+                emailToRequest = toEmail
+                confirmDialog.setMessage(getString(R.string.send_request_dialog_message, toEmail))
+                confirmDialog.show()
             }
             finally {
-                hideLoading(loadingDialog)
+                loadingDialog.dismiss()
             }
         }
     }

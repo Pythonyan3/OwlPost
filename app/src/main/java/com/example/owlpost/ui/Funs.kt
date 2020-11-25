@@ -1,16 +1,20 @@
 package com.example.owlpost.ui
 
 import android.Manifest
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
+import com.example.owlpost.R
 import com.example.owlpost.ui.widgets.LoadingDialog
 import java.util.*
 
@@ -64,12 +68,13 @@ fun AppCompatActivity.shortToast(message: String) {
     ).show()
 }
 
-fun showLoading(loadingDialog: LoadingDialog) {
-    loadingDialog.show()
-}
-
-fun hideLoading(loadingDialog: LoadingDialog) {
-    loadingDialog.dismiss()
+fun createConfirmAlertDialog(activity: AppCompatActivity): AlertDialog.Builder {
+    val builder = AlertDialog.Builder(ContextThemeWrapper(activity, R.style.AppTheme))
+    builder.setCancelable(false)
+    builder.setTitle(activity.getString(R.string.dialog_title))
+    builder.setNegativeButton(activity.getString(R.string.dialog_no)) { _: DialogInterface, _: Int ->}
+    builder.create()
+    return builder
 }
 
 fun isValidEmail(email: String): Boolean {

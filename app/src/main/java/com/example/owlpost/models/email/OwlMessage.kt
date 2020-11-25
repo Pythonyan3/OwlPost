@@ -41,9 +41,19 @@ class OwlMessage {
     val seen: Boolean
         get() = message.isSet(Flags.Flag.SEEN)
     val encrypted: Boolean
-        get() = message.getHeader("X-Owl-Encryption") != null
+        get() = message.getHeader(ENCRYPTION_HEADER_NAME) != null
     val signed: Boolean
-        get() = message.getHeader("X-Owl-Sign") != null
+        get() = message.getHeader(SIGNATURE_HEADER_NAME) != null
+    val isExchangeRequest: Boolean
+        get() = message.getHeader(EXCHANGE_REQUEST) != null
+    val isExchangeResponse: Boolean
+        get() = message.getHeader(EXCHANGE_RESPONSE) != null
+    val exchangeEncryptionKey: String
+        get() = message.getHeader(ENCRYPTION_KEY_EXCHANGE_HEADER_NAME)[0]
+    val exchangeSignKey: String
+        get() = message.getHeader(SIGNATURE_KEY_EXCHANGE_HEADER_NAME)[0]
+
+
     val text: String
         get() = mimeManager.parseText(message, "text/plain")
     val html: String
@@ -127,7 +137,7 @@ class OwlMessage {
             }
             // set encrypted header with key
             if (attachments.isNotEmpty() || text.isNotEmpty())
-                message.setHeader( "X-Owl-Encryption", textSymmetricKeyString)
+                message.setHeader( ENCRYPTION_HEADER_NAME, textSymmetricKeyString)
         }
     }
 
@@ -137,7 +147,7 @@ class OwlMessage {
         withContext(Dispatchers.IO){
             message.saveChanges()
             if (text.isNotEmpty()){
-                val encryptedKey = message.getHeader("X-Owl-Encryption")[0]
+                val encryptedKey = message.getHeader(ENCRYPTION_HEADER_NAME)[0]
                 val secretKey = cryptoManager.decryptKey(encryptedKey, privateKey)
                 mimeManager.parseTextParts(message, "text/plain").forEach { part ->
                     part.setContent(cryptoManager.decrypt(
@@ -176,7 +186,7 @@ class OwlMessage {
             message.saveChanges()
             val cryptoManager = OwlCryptoManager()
             message.setHeader(
-                "X-Owl-Sign",
+                SIGNATURE_HEADER_NAME,
                 cryptoManager.sign(mimeManager.getBytesToSign(message), privateKey)
             )
         }
@@ -186,7 +196,7 @@ class OwlMessage {
         var result = false
         withContext(Dispatchers.IO){
             val cryptoManager = OwlCryptoManager()
-            val digest = message.getHeader("X-Owl-Sign")[0]
+            val digest = message.getHeader(SIGNATURE_HEADER_NAME)[0]
             result = cryptoManager.verify(mimeManager.getBytesToSign(message), digest, publicKey)
         }
         return result

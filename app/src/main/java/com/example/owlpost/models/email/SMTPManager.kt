@@ -20,9 +20,9 @@ const val SMTP_PORT = 465
 
 class SMTPManager(private val user: User){
 
-    suspend fun sendMessage(message: OwlMessage){
+    suspend fun sendMessage(message: MimeMessage){
         withContext(Dispatchers.IO){
-            Transport.send(message.message)
+            Transport.send(message)
         }
     }
 
@@ -36,6 +36,30 @@ class SMTPManager(private val user: User){
         val manager = MimeMessageManager()
         val mimeMessage = MimeMessage(getSession())
         manager.buildMimeMessage(mimeMessage, user.email, recipient, subject, attachments, plainText, html)
+        return mimeMessage
+    }
+
+    fun getSendExchangeRequestMessage(email: String, publicEncryptionKey: String, publicSignKey: String): MimeMessage {
+        val mimeMessage = MimeMessage(getSession())
+        mimeMessage.setFrom(InternetAddress(user.email))
+        mimeMessage.setRecipient(Message.RecipientType.TO, InternetAddress(email))
+        mimeMessage.subject = "OwlPost exchange request!"
+        mimeMessage.setHeader(EXCHANGE_REQUEST, "")
+        mimeMessage.setHeader(ENCRYPTION_KEY_EXCHANGE_HEADER_NAME, publicEncryptionKey)
+        mimeMessage.setHeader(SIGNATURE_KEY_EXCHANGE_HEADER_NAME, publicSignKey)
+        mimeMessage.setContent(MimeMultipart())
+        return mimeMessage
+    }
+
+    fun getSendExchangeResponseMessage(email: String, publicEncryptionKey: String, publicSignKey: String): MimeMessage {
+        val mimeMessage = MimeMessage(getSession())
+        mimeMessage.setFrom(InternetAddress(user.email))
+        mimeMessage.setRecipient(Message.RecipientType.TO, InternetAddress(email))
+        mimeMessage.subject = "OwlPost exchange response!"
+        mimeMessage.setHeader(EXCHANGE_RESPONSE, "")
+        mimeMessage.setHeader(ENCRYPTION_KEY_EXCHANGE_HEADER_NAME, publicEncryptionKey)
+        mimeMessage.setHeader(SIGNATURE_KEY_EXCHANGE_HEADER_NAME, publicSignKey)
+        mimeMessage.setContent(MimeMultipart())
         return mimeMessage
     }
 

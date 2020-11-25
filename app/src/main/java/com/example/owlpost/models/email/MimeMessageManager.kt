@@ -11,6 +11,13 @@ import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
 import kotlin.math.ceil
 
+const val ENCRYPTION_HEADER_NAME = "X-Owl-Encryption"
+const val SIGNATURE_HEADER_NAME = "X-Owl-Sign"
+const val EXCHANGE_REQUEST = "X-Owl-Exchange-Request"
+const val EXCHANGE_RESPONSE = "X-Owl-Exchange-Response"
+const val ENCRYPTION_KEY_EXCHANGE_HEADER_NAME = "X-Owl-Encryption-Exchange"
+const val SIGNATURE_KEY_EXCHANGE_HEADER_NAME = "X-Owl-Sign-Exchange"
+
 class MimeMessageManager {
     fun buildMimeMessage(
         message: MimeMessage,

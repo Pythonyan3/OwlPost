@@ -46,7 +46,7 @@ class AddEmailActivity : AppCompatActivity() {
                 shortToast(getString(R.string.incorrect_email))
             }
             else {
-                showLoading(loadingDialog)
+                loadingDialog.show()
                 val imap = IMAPManager(User(email, password))
                 val store = imap.getStore()
                 CoroutineScope(Dispatchers.Main).launch{
@@ -74,7 +74,7 @@ class AddEmailActivity : AppCompatActivity() {
                         ).show()
                     }
                     finally {
-                        hideLoading(loadingDialog)
+                        loadingDialog.dismiss()
                     }
                 }
             }

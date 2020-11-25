@@ -31,29 +31,25 @@ class OwlKeysManager{
 
     fun encodeKeyToBase64String(key: PublicKey): String{
         val keySpec = X509EncodedKeySpec(key.encoded)
-        return Base64.encodeToString(keySpec.encoded, Base64.DEFAULT)
+        return Base64.encodeToString(keySpec.encoded, Base64.NO_WRAP)
     }
 
     fun encodeKeyToBase64String(key: PrivateKey): String{
         val keySpec = PKCS8EncodedKeySpec(key.encoded)
-        return Base64.encodeToString(keySpec.encoded, Base64.DEFAULT)
+        return Base64.encodeToString(keySpec.encoded, Base64.NO_WRAP)
     }
 
     fun publicKeyBase64StringDecode(base64String: String, algorithm: String): PublicKey {
-        val bytes = Base64.decode(base64String.toByteArray(), Base64.DEFAULT)
+        val bytes = Base64.decode(base64String.toByteArray(), Base64.NO_WRAP)
         val keySpec = X509EncodedKeySpec(bytes)
         val keyFactory = KeyFactory.getInstance(algorithm)
         return keyFactory.generatePublic(keySpec)
     }
 
     fun privateKeyBase64StringDecode(base64String: String, algorithm: String): PrivateKey {
-        val bytes = Base64.decode(base64String.toByteArray(), Base64.DEFAULT)
+        val bytes = Base64.decode(base64String.toByteArray(), Base64.NO_WRAP)
         val keySpec = PKCS8EncodedKeySpec(bytes)
         val keyFactory = KeyFactory.getInstance(algorithm)
         return keyFactory.generatePrivate(keySpec)
-    }
-
-    fun encryptSecretKey(secretKey: SecretKey, publicKey: PublicKey){
-
     }
 }

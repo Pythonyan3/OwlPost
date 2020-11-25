@@ -106,7 +106,17 @@ class SettingsFragment: Fragment() {
     }
 
     private fun initFields() {
-        resetEmailAlertDialog = createResetEmailAlert()
+        resetEmailAlertDialog = createConfirmAlertDialog(mainActivity)
+        resetEmailAlertDialog.setPositiveButton(getString(R.string.dialog_yes)) { _: DialogInterface, _: Int ->
+            CoroutineScope(Dispatchers.Main).launch {
+                if (mainActivity.mailbox.resetMailbox()){
+                    mainActivity.settings.removeActiveUser(true)
+                    mainActivity.supportFragmentManager.popBackStack()
+                }
+                else
+                    mainActivity.shortToast(mainActivity.getString(R.string.cannot_reset))
+            }
+        }
     }
 
     private fun showFileCreateIntent(requestCode: Int, filename: String = "owlKeys") {
@@ -172,25 +182,5 @@ class SettingsFragment: Fragment() {
         remove_reset.setOnClickListener {
             resetEmailAlertDialog.show()
         }
-    }
-
-    private fun createResetEmailAlert(): AlertDialog.Builder {
-        val builder = AlertDialog.Builder(ContextThemeWrapper(context, R.style.AppTheme))
-        builder.setCancelable(false)
-        builder.setTitle(getString(R.string.dialog_title))
-        builder.setMessage(getString(R.string.dialog_message))
-        builder.setPositiveButton(getString(R.string.dialog_yes)) { _: DialogInterface, _: Int ->
-            CoroutineScope(Dispatchers.Main).launch {
-                if (mainActivity.mailbox.resetMailbox()){
-                    mainActivity.settings.removeActiveUser(true)
-                    mainActivity.supportFragmentManager.popBackStack()
-                }
-                else
-                    mainActivity.shortToast(mainActivity.getString(R.string.cannot_reset))
-            }
-        }
-        builder.setNegativeButton(getString(R.string.dialog_no)) { _: DialogInterface, _: Int ->}
-        builder.create()
-        return builder
     }
 }

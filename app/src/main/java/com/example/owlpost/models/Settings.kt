@@ -116,11 +116,19 @@ class Settings(private val context: Context) {
         return manager.privateKeyBase64StringDecode(base64Key, ASYMMETRIC_ENCRYPT_ALGORITHM)
     }
 
+    fun getPublicKeyString(email: String, keyWorkType: Int): String {
+        return readKeyString(email, keyWorkType or PUBLIC_KEY)
+    }
+
+    fun getPrivateKeyString(email: String, keyWorkType: Int): String {
+        return readKeyString(email, keyWorkType or PRIVATE_KEY)
+    }
+
     fun getSubscriberPublicKey(email: String, subscriber: String, keyWorkType: Int): PublicKey {
         if (email == subscriber)
             return getPublicKey(email, keyWorkType)
         val manager = OwlKeysManager()
-        val base64Key = readSubscriberKeyString(email, subscriber)
+        val base64Key = readSubscriberKeyString(email, subscriber, keyWorkType)
         return manager.publicKeyBase64StringDecode(base64Key, ASYMMETRIC_ENCRYPT_ALGORITHM)
     }
 
@@ -156,6 +164,17 @@ class Settings(private val context: Context) {
         }
     }
 
+    fun putSubscriberKeys(email: String, subscriber: String, encryptionKeyString: String, signKeyString: String) {
+        val newUserSettings = context.getSharedPreferences(
+            "$email$SUBSCRIBER_KEYS_STRING_KEY",
+            Context.MODE_PRIVATE
+        )
+        newUserSettings.edit(commit = true){
+            putString("$subscriber-$PUBLIC_ENCRYPT_STRING_KEY", encryptionKeyString)
+            putString("$subscriber-$PUBLIC_SIGN_STRING_KEY", signKeyString)
+        }
+    }
+
     private fun readKeyString(email: String, keyType: Int): String {
         val newUserSettings = context.getSharedPreferences(email, Context.MODE_PRIVATE)
         return when (keyType) {
@@ -176,13 +195,21 @@ class Settings(private val context: Context) {
         }
     }
 
-    private fun readSubscriberKeyString(email: String, subscriber: String): String{
+    private fun readSubscriberKeyString(email: String, subscriber: String, keyWorkType: Int): String{
         val newUserSettings = context.getSharedPreferences(
             "$email$SUBSCRIBER_KEYS_STRING_KEY",
             Context.MODE_PRIVATE
         )
-        return newUserSettings.getString(subscriber, null)
-            ?: throw SettingsException("No subscriber's key")
+        return when (keyWorkType){
+            ENCRYPT_KEY ->
+                newUserSettings.getString("$subscriber-$PUBLIC_ENCRYPT_STRING_KEY", null)
+                    ?: throw SettingsException("No subscriber's key")
+            SIGN_KEY ->
+                newUserSettings.getString("$subscriber-$PUBLIC_SIGN_STRING_KEY", null)
+                    ?: throw SettingsException("No subscriber's key")
+            else ->
+                throw SettingsException(context.getString(R.string.key_type, keyWorkType))
+        }
     }
 
     fun writeKeysToFile(email:String, uri: Uri, accessKeyType: Int){
