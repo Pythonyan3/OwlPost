@@ -54,7 +54,6 @@ class SettingsFragment: Fragment() {
     override fun onStop() {
         super.onStop()
         mainActivity.drawer.enableDrawer()
-        mainActivity.drawer.updateTitle()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -107,6 +106,7 @@ class SettingsFragment: Fragment() {
 
     private fun initFields() {
         resetEmailAlertDialog = createConfirmAlertDialog(mainActivity)
+        resetEmailAlertDialog.setMessage(getString(R.string.reset_dialog_message))
         resetEmailAlertDialog.setPositiveButton(getString(R.string.dialog_yes)) { _: DialogInterface, _: Int ->
             CoroutineScope(Dispatchers.Main).launch {
                 if (mainActivity.mailbox.resetMailbox()){

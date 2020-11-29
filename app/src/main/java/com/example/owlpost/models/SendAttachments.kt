@@ -25,9 +25,7 @@ class SendAttachments{
         context = _context
         val totalSize = calcTotalAttachmentsSize(_attachments)
         if (totalSize > MAX_ATTACHMENTS_SIZE_BYTES)
-            throw AttachmentsSizeException(
-                context.getString(R.string.total_attachments_size, MAX_ATTACHMENTS_SIZE_MB)
-            )
+            throw AttachmentsSizeException("File exceed total attachments size $MAX_ATTACHMENTS_SIZE_MB Mb")
         attachments = _attachments
         totalAttachmentsSize = totalSize.toInt()
     }
@@ -38,9 +36,7 @@ class SendAttachments{
 
     fun add(element: UriAttachment){
         if (totalAttachmentsSize + element.size > MAX_ATTACHMENTS_SIZE_BYTES)
-            throw AttachmentsSizeException(
-                context.getString(R.string.total_attachments_size, MAX_ATTACHMENTS_SIZE_MB)
-            )
+            throw AttachmentsSizeException("File exceed total attachments size $MAX_ATTACHMENTS_SIZE_MB Mb")
         attachments.add(element)
         totalAttachmentsSize += element.size.toInt()
     }

@@ -13,10 +13,12 @@ import kotlin.math.ceil
 
 const val ENCRYPTION_HEADER_NAME = "X-Owl-Encryption"
 const val SIGNATURE_HEADER_NAME = "X-Owl-Sign"
-const val EXCHANGE_REQUEST = "X-Owl-Exchange-Request"
-const val EXCHANGE_RESPONSE = "X-Owl-Exchange-Response"
+const val EXCHANGE_REQUEST_HEADER = "X-Owl-Exchange-Request"
+const val EXCHANGE_RESPONSE_HEADER = "X-Owl-Exchange-Response"
 const val ENCRYPTION_KEY_EXCHANGE_HEADER_NAME = "X-Owl-Encryption-Exchange"
 const val SIGNATURE_KEY_EXCHANGE_HEADER_NAME = "X-Owl-Sign-Exchange"
+const val EXCHANGE_REQUEST_SUBJECT = "OwlPost exchange request!"
+const val EXCHANGE_RESPONSE_SUBJECT = "OwlPost exchange response!"
 
 class MimeMessageManager {
     fun buildMimeMessage(

@@ -47,13 +47,11 @@ class AddEmailActivity : AppCompatActivity() {
             }
             else {
                 loadingDialog.show()
-                val imap = IMAPManager(User(email, password))
-                val store = imap.getStore()
                 CoroutineScope(Dispatchers.Main).launch{
                     try{
                         withContext(Dispatchers.IO){
-                            store.connect(imap.emailHost, email, password)
-                            store.close()
+                            val imap = IMAPManager(User(email, password))
+                            imap.close()
                             setting.addUser(User(email, password))
                         }
                         setResult(RESULT_OK)

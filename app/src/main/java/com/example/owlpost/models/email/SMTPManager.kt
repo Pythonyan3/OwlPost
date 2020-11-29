@@ -2,21 +2,18 @@ package com.example.owlpost.models.email
 
 
 import com.example.owlpost.models.SendAttachments
-import com.example.owlpost.models.UriAttachment
 import com.example.owlpost.models.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
-import javax.activation.DataHandler
 import javax.mail.*
 import javax.mail.Message
 import javax.mail.internet.InternetAddress
-import javax.mail.internet.MimeBodyPart
 import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
-import javax.mail.util.ByteArrayDataSource
 
 const val SMTP_PORT = 465
+
 
 class SMTPManager(private val user: User){
 
@@ -43,8 +40,8 @@ class SMTPManager(private val user: User){
         val mimeMessage = MimeMessage(getSession())
         mimeMessage.setFrom(InternetAddress(user.email))
         mimeMessage.setRecipient(Message.RecipientType.TO, InternetAddress(email))
-        mimeMessage.subject = "OwlPost exchange request!"
-        mimeMessage.setHeader(EXCHANGE_REQUEST, "")
+        mimeMessage.subject = EXCHANGE_REQUEST_SUBJECT
+        mimeMessage.setHeader(EXCHANGE_REQUEST_HEADER, "")
         mimeMessage.setHeader(ENCRYPTION_KEY_EXCHANGE_HEADER_NAME, publicEncryptionKey)
         mimeMessage.setHeader(SIGNATURE_KEY_EXCHANGE_HEADER_NAME, publicSignKey)
         mimeMessage.setContent(MimeMultipart())
@@ -55,8 +52,8 @@ class SMTPManager(private val user: User){
         val mimeMessage = MimeMessage(getSession())
         mimeMessage.setFrom(InternetAddress(user.email))
         mimeMessage.setRecipient(Message.RecipientType.TO, InternetAddress(email))
-        mimeMessage.subject = "OwlPost exchange response!"
-        mimeMessage.setHeader(EXCHANGE_RESPONSE, "")
+        mimeMessage.subject = EXCHANGE_RESPONSE_SUBJECT
+        mimeMessage.setHeader(EXCHANGE_RESPONSE_HEADER, "")
         mimeMessage.setHeader(ENCRYPTION_KEY_EXCHANGE_HEADER_NAME, publicEncryptionKey)
         mimeMessage.setHeader(SIGNATURE_KEY_EXCHANGE_HEADER_NAME, publicSignKey)
         mimeMessage.setContent(MimeMultipart())

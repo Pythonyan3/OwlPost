@@ -23,7 +23,6 @@ import javax.mail.MessagingException
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private var firstUpdate = true
     lateinit var activeUser: User
     lateinit var drawer: MailDrawer
     lateinit var mailbox: Mailbox
@@ -45,6 +44,13 @@ class MainActivity : AppCompatActivity() {
             .commit()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        CoroutineScope(Dispatchers.IO).launch{
+            mailbox.close()
+        }
+    }
+
     private fun initFields() {
         settings = Settings(this)
         toolbar = binding.mainToolbar
@@ -56,17 +62,18 @@ class MainActivity : AppCompatActivity() {
         drawer.createDrawer()
     }
 
-    fun updateActiveUser(resetFolder: Boolean = false) {
+    fun updateActiveUser() {
         activeUser = settings.getActiveUser()
-        if (this::mailbox.isInitialized)
-            mailbox.changeUser(activeUser, resetFolder)
-        else
-            mailbox = Mailbox(this, activeUser)
         drawerUpdateJob = CoroutineScope(Dispatchers.Main).async {
             try {
+                withContext(Dispatchers.IO){
+                    if (this@MainActivity::mailbox.isInitialized)
+                        mailbox.changeUser(activeUser)
+                    else
+                        mailbox = Mailbox(this@MainActivity, activeUser)
+                }
                 drawer.updateHeaderProfiles(activeUser, settings.usersList())
                 drawer.updateDrawerFolderItems(mailbox.getFolders())
-                firstUpdate = false
             } catch (e: MessagingException) {
                 drawer.clearDrawerFolderItems()
                 Snackbar.make(

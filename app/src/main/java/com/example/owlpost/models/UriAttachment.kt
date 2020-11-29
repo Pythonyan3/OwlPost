@@ -46,7 +46,7 @@ class UriAttachment(val uri: Uri, private val context: Context) {
                 size = file.length()
             }
             else -> {
-                throw UriSchemeException(context.getString(R.string.uri_scheme, uri.scheme))
+                throw UriSchemeException("This uri scheme is not supported")
             }
         }
         if (size / 1000000.0f > 25)

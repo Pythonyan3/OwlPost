@@ -8,10 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.lang.IndexOutOfBoundsException
+import javax.mail.Flags
 
 class Mailbox(
     val context: Context,
-    user: User
+    var user: User
 ) {
     private var managerIMAP: IMAPManager = IMAPManager(user)
     var path = "${context.getExternalFilesDir(null)}/${user.email}"
@@ -52,11 +53,25 @@ class Mailbox(
         return selectedFolder.sync(managerIMAP, path)
     }
 
-    fun changeUser(user: User, resetCurrentFolderName: Boolean = false) {
-        managerIMAP = IMAPManager(user)
-        path = "${context.getExternalFilesDir(null)}/${user.email}"
-        if (resetCurrentFolderName)
+    suspend fun markMessageSeen(uid: Long){
+        val message = OwlMessage(path, selectedFolderName, uid)
+        message.setFlag(Flags.Flag.SEEN)
+        message.saveFlags()
+        managerIMAP.markMessageSeen(uid, selectedFolderName)
+    }
+
+    fun changeUser(_user: User) {
+        if (user.email != _user.email){
+            user = _user
+            managerIMAP.close()
+            managerIMAP = IMAPManager(user)
+            path = "${context.getExternalFilesDir(null)}/${user.email}"
             selectedFolderName = "Inbox"
+        }
+    }
+
+    fun close(){
+        managerIMAP.close()
     }
 
     private fun readFolders(): Array<EmailFolder>? {

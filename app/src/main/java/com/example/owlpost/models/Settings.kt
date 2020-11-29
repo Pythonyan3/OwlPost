@@ -39,9 +39,16 @@ class Settings(private val context: Context) {
         }
     }
 
-    private fun resetActiveUser(){
+    private fun resetActiveUser(email: String){
         usersInfoSettings.edit(commit = true){
             remove(ACTIVE_USER_STRING_KEY)
+        }
+        val subscriberSettings = context.getSharedPreferences(
+            "$email$SUBSCRIBER_KEYS_STRING_KEY",
+            Context.MODE_PRIVATE
+        )
+        subscriberSettings.edit(commit = true){
+            clear()
         }
     }
 
@@ -58,7 +65,7 @@ class Settings(private val context: Context) {
             password = getString(USER_PASSWORD_STRING_KEY, null)
         }
         if (email == null || password == null){
-            throw SettingsException(context.getString(R.string.active_user_doesnt_exist))
+            throw SettingsException("Active user doesn't exist")
         }
         setActiveUser(email.toString())
         return User(email.toString(), password)
@@ -67,7 +74,7 @@ class Settings(private val context: Context) {
     fun addUser(user: User) {
         val usersList = usersList()
         if (usersList.contains(user.email))
-            throw SettingsException(context.getString(R.string.email_already_exists))
+            throw SettingsException("User with this email address already exists")
         // write user email to list of all emails
         usersList.add(user.email)
         writeUsersList(usersList)
@@ -101,7 +108,7 @@ class Settings(private val context: Context) {
                 remove(USER_PASSWORD_STRING_KEY)
         }
         // clear active user record
-        resetActiveUser()
+        resetActiveUser(activeUser.email)
     }
 
     fun getPublicKey(email: String, keyWorkType: Int): PublicKey{
@@ -159,7 +166,7 @@ class Settings(private val context: Context) {
                     putString(PRIVATE_SIGN_STRING_KEY, base64SignKey)
                 }
                 else ->
-                    throw SettingsException(context.getString(R.string.access_key_type, accessKeyType))
+                    throw SettingsException("Wrong access key type: $accessKeyType")
             }
         }
     }
@@ -180,18 +187,18 @@ class Settings(private val context: Context) {
         return when (keyType) {
             PUBLIC_KEY or ENCRYPT_KEY ->
                 newUserSettings.getString(PUBLIC_ENCRYPT_STRING_KEY, null)
-                    ?: throw SettingsException(context.getString(R.string.key_exist))
+                    ?: throw SettingsException("Key doesn't exist")
             PUBLIC_KEY or SIGN_KEY ->
                 newUserSettings.getString(PUBLIC_SIGN_STRING_KEY, null)
-                    ?: throw SettingsException(context.getString(R.string.key_exist))
+                    ?: throw SettingsException("Key doesn't exist")
             PRIVATE_KEY or ENCRYPT_KEY ->
                 newUserSettings.getString(PRIVATE_ENCRYPT_STRING_KEY, null)
-                    ?: throw SettingsException(context.getString(R.string.key_exist))
+                    ?: throw SettingsException("Key doesn't exist")
             PRIVATE_KEY or SIGN_KEY ->
                 newUserSettings.getString(PRIVATE_SIGN_STRING_KEY, null)
-                    ?: throw SettingsException(context.getString(R.string.key_exist))
+                    ?: throw SettingsException("Key doesn't exist")
             else ->
-                throw SettingsException(context.getString(R.string.key_type, keyType))
+                throw SettingsException("Wrong key type: $keyType")
         }
     }
 
@@ -208,7 +215,7 @@ class Settings(private val context: Context) {
                 newUserSettings.getString("$subscriber-$PUBLIC_SIGN_STRING_KEY", null)
                     ?: throw SettingsException("No subscriber's key")
             else ->
-                throw SettingsException(context.getString(R.string.key_type, keyWorkType))
+                throw SettingsException("Wrong work key type: $keyWorkType")
         }
     }
 
@@ -260,7 +267,7 @@ class Settings(private val context: Context) {
                 putKeys(email, encryptKey, signKey)
             }
             else ->
-                throw SettingsException(context.getString(R.string.access_key_type, accessKeyType))
+                throw SettingsException("Wrong access key type: $accessKeyType")
         }
 
     }

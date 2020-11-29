@@ -23,7 +23,7 @@
     <string name="message_body_hint">Text here…</string>
 
     <!--Toasts messages-->
-    <string name="cant_attach_msg">Couldn\'t attach file</string>
+    <string name="cannot_attach">Couldn\'t attach file</string>
     <string name="sign_on">Digital signature is enabled</string>
     <string name="encryption_on">Encryption is enabled</string>
     <string name="no_recipient">Enter recipient email address</string>
@@ -38,31 +38,16 @@
     <string name="import_export_error">Cannot complete operations, cannot access selected file</string>
     <string name="export_success">Keys exported successful</string>
     <string name="import_success">Keys imported successful</string>
+    <string name="subscriber_keys_import_success">%1$s keys imported successful</string>
     <string name="file_saved_success">File saved successful</string>
     <string name="file_saved_error">Cannot save file</string>
-
-    <!--Exceptions messages-->
+    <string name="cannot_decrypt">Cannot decrypt message</string>
     <string name="attachment_size">File exceed total attachments size %1$dMb</string>
-    <string name="total_attachments_size">Total attachments size shouldn\'t exceed %1$dMb</string>
-    <string name="uri_scheme">Don\'t support current uri scheme %1$s</string>
     <string name="email_already_exists">Entered email already exists</string>
-    <string name="active_user_doesnt_exist">Active users doesn\'t exist</string>
-    <string name="user_password_not_found">User\'s password not found</string>
-    <string name="folders_dont_exist">Folders don\'t exist</string>
-    <string name="offset_error">Offset larger than message count</string>
-    <string name="read_message_error">Error was occurred while reading messages</string>
-    <string name="get_folder_error">Error was occurred while getting folder from server</string>
-    <string name="no_selected_mailbox">Mailbox is not selected</string>
-    <string name="key_type">Unknown key type %1$d</string>
-    <string name="access_key_type">Unknown access key type %1$d</string>
-    <string name="key_exist">Key doesn\'t exist</string>
+    <string name="no_subscriber_key">You have no %1$s\'s key</string>
 
     <!--Main Activity-->
     <!--Drawer Menu Items Names (mailboxes)-->
-    <string name="inbox_item">Inbox</string>
-    <string name="sent_item">Sent</string>
-    <string name="drafts_item">Drafts</string>
-    <string name="trash_item">Trash</string>
     <string name="new_email_item">Add Email</string>
     <string name="remove_item">Remove Email</string>
     <string name="settings_item">Settings</string>
@@ -130,6 +115,10 @@
     <string name="accept_response_dialog_message">
         You have got keys exchange response from %1$s. Import keys?
     </string>
+
+    <string name="only_import_keys_dialog_message">
+        Do you want only import %1$s keys?
+    </string>
     <string name="dialog_yes">Confirm</string>
     <string name="dialog_no">Cancel</string>
 
@@ -139,6 +128,7 @@
     <string name="message_encrypt_info">Message protected by OwlPost</string>
     <string name="message_sign_verified">Message verified by OwlPost</string>
     <string name="message_sign_unverified">Message unverified! Seems like message was modified</string>
+    <string name="decrypt_error">Error was occurred while decrypt</string>
 
     <integer-array name="foregroundColors">
         <item>@color/formattingBlack</item>

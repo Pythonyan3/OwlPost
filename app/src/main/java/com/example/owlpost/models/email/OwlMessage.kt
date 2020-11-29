@@ -6,6 +6,7 @@ import com.example.owlpost.models.cryptography.OwlKeysManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.RandomAccessFile
 import java.lang.NullPointerException
 import java.security.PrivateKey
 import java.security.PublicKey
@@ -30,6 +31,7 @@ class OwlMessage {
     var uid: Long = -1
     private var folderName: String = "Inbox"
     private val mimeManager = MimeMessageManager()
+    private val path: String
     val message: MimeMessage
 
     val from: String
@@ -45,9 +47,9 @@ class OwlMessage {
     val signed: Boolean
         get() = message.getHeader(SIGNATURE_HEADER_NAME) != null
     val isExchangeRequest: Boolean
-        get() = message.getHeader(EXCHANGE_REQUEST) != null
+        get() = message.getHeader(EXCHANGE_REQUEST_HEADER) != null
     val isExchangeResponse: Boolean
-        get() = message.getHeader(EXCHANGE_RESPONSE) != null
+        get() = message.getHeader(EXCHANGE_RESPONSE_HEADER) != null
     val exchangeEncryptionKey: String
         get() = message.getHeader(ENCRYPTION_KEY_EXCHANGE_HEADER_NAME)[0]
     val exchangeSignKey: String
@@ -77,34 +79,48 @@ class OwlMessage {
         }
     }
 
-    constructor(_message: MimeMessage){
+    constructor(_path: String, _message: MimeMessage){
+        path = _path
         message = _message
     }
 
-    constructor(_uid: Long, _folderName: String, _message: MimeMessage){
+    constructor(_path: String, _uid: Long, _folderName: String, _message: MimeMessage){
         uid = _uid
         folderName = _folderName
         message = _message
+        path = _path
     }
 
-    constructor(path: String, _folderName: String, _uid: Long){
+    constructor(_path: String, _folderName: String, _uid: Long){
+        uid = _uid
+        folderName = _folderName
+        path = _path
         val file = File("$path/$_folderName/${_uid}")
         val fis = file.inputStream()
         val session = Session.getInstance(Properties())
         val flagsBits = ByteArray(1)
         fis.read(flagsBits)
         val flags = mimeManager.parseIntToFlags(flagsBits[0].toUByte().toInt())
-        uid = _uid
-        folderName = _folderName
         message = MimeMessage(session, fis)
         message.setFlags(flags, true)
     }
 
-    fun writeTo(path: String) {
+    fun writeTo() {
         val fos = File("$path/$folderName/$uid").outputStream()
         val flagsBits = mimeManager.parseFlagsToInt(message.flags)
         fos.write(flagsBits)
         message.writeTo(fos)
+    }
+
+    fun setFlag(flag: Flags.Flag){
+        message.setFlag(flag, true)
+    }
+
+    fun saveFlags(){
+        val file = RandomAccessFile("$path/$folderName/$uid", "rw")
+        val flagsBits = mimeManager.parseFlagsToInt(message.flags)
+        file.write(flagsBits)
+        file.close()
     }
 
     suspend fun encrypt(publicKey: PublicKey){
@@ -202,7 +218,7 @@ class OwlMessage {
         return result
     }
 
-    fun copy(path: String): OwlMessage {
+    fun copy(): OwlMessage {
         return OwlMessage(path, folderName, uid)
     }
 

@@ -11,6 +11,7 @@ import com.example.owlpost.R
 import com.example.owlpost.fragments.MailboxFragment
 import com.example.owlpost.fragments.SettingsFragment
 import com.example.owlpost.models.Settings
+import com.example.owlpost.models.SettingsException
 import com.example.owlpost.models.email.EmailFolder
 import com.example.owlpost.models.User
 import com.example.owlpost.ui.capitalizeWords
@@ -65,13 +66,6 @@ class MailDrawer(
         toolbar.setNavigationOnClickListener {
             drawer.openDrawer()
         }
-    }
-
-    fun updateTitle() {
-        val drawerItem = drawer.getDrawerItem(drawer.currentSelection) as PrimaryDrawerItem
-        val titleText = drawerItem.name?.text
-        if (titleText != null)
-            toolbar.title = titleText
     }
 
     fun updateHeaderProfiles(activeUser: User, users: MutableSet<String>) {
@@ -132,7 +126,7 @@ class MailDrawer(
                     val email = profile.name?.text as String
                     settings.setActiveUser(email)
                     toolbar.title = activity.getString(R.string.app_name)
-                    activity.updateActiveUser(true)
+                    activity.updateActiveUser()
                     return false
                 }
             })
@@ -190,8 +184,14 @@ class MailDrawer(
                                 // Remove email item click
                                 val profile = header.activeProfile
                                 if (profile != null) {
-                                    settings.removeActiveUser()
-                                    activity.updateActiveUser(true)
+                                    toolbar.title = activity.getString(R.string.app_name)
+                                    try{
+                                        settings.removeActiveUser()
+                                        activity.updateActiveUser()
+                                    }
+                                    catch (e: SettingsException) {
+                                        activity.startAddEmailActivity()
+                                    }
                                 }
                             }
                             103 -> {

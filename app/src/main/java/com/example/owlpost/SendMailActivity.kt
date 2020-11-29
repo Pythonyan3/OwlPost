@@ -72,9 +72,9 @@ class SendMailActivity : AppCompatActivity() {
                     attachments.add(attachment)
                     attachmentsRecycleView.adapter?.notifyDataSetChanged()
                 } catch (e: UriSchemeException) {
-                    shortToast(getString(R.string.cant_attach_msg))
+                    shortToast(getString(R.string.cannot_attach))
                 } catch (e: FileNotFoundException) {
-                    shortToast(getString(R.string.cant_attach_msg))
+                    shortToast(getString(R.string.cannot_attach))
                 } catch (e: FileSizeException) {
                     e.message?.let { shortToast(it) }
                 } catch (e: AttachmentsSizeException) {
@@ -297,7 +297,10 @@ class SendMailActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 loadingDialog.show()
-                val message = OwlMessage(mimeMessage)
+                val message = OwlMessage(
+                    "${getExternalFilesDir(null)}/${user.email}",
+                    mimeMessage
+                )
                 if (doEncrypt.isChecked)
                     message.encrypt(settings.getSubscriberPublicKey(user.email, toEmail, ENCRYPT_KEY))
                 if (doEcp.isChecked){

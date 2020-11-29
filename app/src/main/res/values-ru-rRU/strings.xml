@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OwlPost</string>
+    <string name="email_hint">Адрес электронной почты</string>
+    <string name="password_hint">Пароль</string>
+    <string name="add_button_text">Добавить</string>
+    <string name="loading_title_add">Добавление почтового ящика…</string>
+    <string name="loading_title_attach">Прикрепление файла…</string>
+    <string name="loading_title_sending">Отправка файла…</string>
+    <string name="loading_title_request">Отправка запроса…</string>
+    <string name="loading_title_response">Отправка ответа…</string>
+    <string name="loading_title_decrypt">Расшифровка…</string>
+    <string name="empty_fields">Вы ввели не все данные</string>
+    <string name="incorrect_email">Неверный адрес электронной почты</string>
+    <string name="to_hint">Кому</string>
+    <string name="subject_hint">Тема</string>
+    <string name="message_body_hint">Сообщение…</string>
+    <string name="cannot_attach">Не удалось прикрепить файл</string>
+    <string name="sign_on">ЭЦП письма включена</string>
+    <string name="encryption_on">Шифрование письма включено</string>
+    <string name="no_recipient">Введите адрес получателя</string>
+    <string name="recipient_email_error">Неверный адрес получателя</string>
+    <string name="auth_error">Ошибка аутентификации. Проверьте введенные данные</string>
+    <string name="internet_connection">Отсутсвует интернет соединение</string>
+    <string name="message_sent">Сообщение отправлено</string>
+    <string name="request_sent">Запрос на обмен ключами отправлен</string>
+    <string name="response_sent">Ответ обмена ключами отправлен</string>
+    <string name="cannot_reset">Не удалось сбросить все данные</string>
+    <string name="import_error">Не удалось импортировать ключи</string>
+    <string name="import_export_error">Выбранный файл недоступен</string>
+    <string name="export_success">Ключи экспортированы успешно</string>
+    <string name="import_success">Ключи импортированы успешно</string>
+    <string name="subscriber_keys_import_success">Ключи %1$s импортированы</string>
+    <string name="file_saved_success">Файл сохранен</string>
+    <string name="file_saved_error">Не удалось сохранить файл</string>
+    <string name="cannot_decrypt">Не удалось расшифровать файл</string>
+    <string name="attachment_size">Суммарный размер вложений не должен превышать %1$dMb</string>
+    <string name="email_already_exists">Почтовый ящик с введенным адресом уже существует</string>
+    <string name="no_subscriber_key">Отсутсвуют ключи для абонента %1$s</string>
+    <string name="new_email_item">Добавить почтовый ящик</string>
+    <string name="remove_item">Удалить почтовый ящик</string>
+    <string name="settings_item">Настройки</string>
+    <string name="export_public_keys">Экспортировать открытые ключи шифрования и ЭЦП</string>
+    <string name="export_private_keys">Экспортировать закрытые ключи шифрования и ЭЦП</string>
+    <string name="import_public_keys">Импортировать открытые ключи шифрования и ЭЦП</string>
+    <string name="import_private_keys">Импортировать закрытые ключи шифрования и ЭЦП</string>
+    <string name="remove_reset_caption">Удалить почтовый ящик и сбросить данные</string>
+    <string name="dialog_title">Вы уверены?</string>
+    <string name="dialog_yes">Подтвердить</string>
+    <string name="dialog_no">Отменить</string>
+    <string name="message_to_prefix">Кому %1$s</string>
+    <string name="no_subject">(Нет темы)</string>
+    <string name="message_encrypt_info">Сообщение защищено OwlPost</string>
+    <string name="message_sign_verified">Сообщение проверено OwlPost</string>
+    <string name="message_sign_unverified">Сообщение не прошло проверку!</string>
+    <string name="decrypt_error">Не удалось расшифровать сообщение</string>
+    <string name="only_import_keys_dialog_message">Импортировать ключи %1$s без отправки ответа?</string>
+    <string name="accept_response_dialog_message">Вы получили ответ на запрос обмена ключами от %1$s. Импортировать ключи?</string>
+
+    <string name="export_public_keys_description">
+        Сохранение открытых ключей шифрования и ЭЦП в файл.
+    </string>
+
+    <string name="export_private_keys_description">
+        Сохранение закрытых ключей шифрования и ЭЦП в файл.
+    </string>
+
+    <string name="import_public_keys_description">
+        Импорт открытых ключей шифрования и ЭЦП.
+    </string>
+
+    <string name="import_private_keys_description">
+        Импорт зыкрытых ключей для шифрования и ЭЦП.
+    </string>
+
+    <string name="import_public_dialog_info">
+        После импорта новых открытых ключей вам необходимо сообщить об этом вашим собеседникам.
+        Используйте эту функцию при переустановке приложения.
+    </string>
+
+    <string name="import_private_dialog_info">
+        После импорта новых закрытых ключей вы не сможете расшифровать сообщения зашифрованные и подписанные предыдущими ключами.
+        Используйте эту функцию при переустановке приложения.
+    </string>
+
+    <string name="remove_reset_description">
+        Удалить почтовый ящик и все данные (письма и ключи шифрования).
+    </string>
+
+    <string name="reset_dialog_message">
+        Сброс данных безвозвратно удалит все сообщения с устройства и ключи шифрования и ЭЦП.
+        Если у вас нет экспортированных ключей, то вы не сможете расшифровать зашифрованные письма.
+    </string>
+    <string name="send_request_dialog_message">
+        У вас нет ключей пользователя %1$s. Желаете отправить запрос на обмен?
+        После обмена ключами вы и %1$s сможете шифровать и подписывать сообщения для друг друга.
+    </string>
+    <string name="accept_request_dialog_message">
+        Вы получили запрос на обмен ключами от %1$s. Желаете совершить обмен?
+        После обмена ключами вы и %1$s сможете шифровать и подписывать сообщения для друг друга.
+    </string>
+</resources>
