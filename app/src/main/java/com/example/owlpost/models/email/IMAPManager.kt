@@ -16,9 +16,9 @@ const val GMAIL_ROOT_FOLDER = "[Gmail]/"
 
 class IMAPManager(user: User){
     private val emailHost = "$PROTOCOL.${user.email.substring(user.email.indexOf("@") + 1)}"
-    private val store = getStoreInstance()
+    private val store = getStoreInstance(user)
     init {
-        store.connect(emailHost, user.email, user.password)
+        store.connect()
     }
 
     suspend fun getFolders(): Array<EmailFolder> {
@@ -143,15 +143,16 @@ class IMAPManager(user: User){
         return folderName.contains("/")
     }
 
-    private fun getStoreInstance(): Store{
+    private fun getStoreInstance(user: User): Store{
         val properties = getProperties()
-        val session = Session.getInstance(properties)
+        val session = Session.getInstance(properties, EmailAuthenticator(user.email, user.password))
         return session.store
     }
 
     private fun getProperties(): Properties {
         val properties = Properties()
         properties["mail.store.protocol"] = STORE_PROTOCOL
+        properties["mail.$STORE_PROTOCOL.host"] = emailHost
         properties["mail.$STORE_PROTOCOL.ssl.enable"] = "true"
         properties["mail.$STORE_PROTOCOL.port"] = IMAP_PORT.toString()
         return properties

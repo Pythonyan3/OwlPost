@@ -8,12 +8,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.RandomAccessFile
-import java.lang.NullPointerException
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.util.*
 import javax.activation.DataHandler
-import javax.mail.*
+import javax.mail.Flags
+import javax.mail.Message
+import javax.mail.Session
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 import javax.mail.util.ByteArrayDataSource
@@ -58,9 +59,9 @@ class OwlMessage {
 
 
     val text: String
-        get() = mimeManager.parseText(message, "text/plain")
+        get() = mimeManager.parseText(message, PLAIN_MIME_TYPE)
     val html: String
-        get() = mimeManager.parseText(message, "text/html")
+        get() = mimeManager.parseText(message, HTML_MIME_TYPE)
     val attachmentParts
         get() = mimeManager.parseAttachmentsParts(message)
     var flags: Flags
@@ -70,29 +71,30 @@ class OwlMessage {
             message.setFlags(value, true)
         }
 
-    val to: Array<String> get() {
-        return try{
-            Array(message.getRecipients(Message.RecipientType.TO).size) { i ->
-                (message.getRecipients(Message.RecipientType.TO)[i] as InternetAddress).address
+    val to: Array<String>
+        get() {
+            return try {
+                Array(message.getRecipients(Message.RecipientType.TO).size) { i ->
+                    (message.getRecipients(Message.RecipientType.TO)[i] as InternetAddress).address
+                }
+            } catch (e: NullPointerException) {
+                arrayOf()
             }
-        } catch (e: NullPointerException){
-            arrayOf()
         }
-    }
 
-    constructor(_path: String, _message: MimeMessage){
+    constructor(_path: String, _message: MimeMessage) {
         path = _path
         message = _message
     }
 
-    constructor(_path: String, _uid: Long, _folderName: String, _message: MimeMessage){
+    constructor(_path: String, _uid: Long, _folderName: String, _message: MimeMessage) {
         uid = _uid
         folderName = _folderName
         message = _message
         path = _path
     }
 
-    constructor(_path: String, _folderName: String, _uid: Long){
+    constructor(_path: String, _folderName: String, _uid: Long) {
         uid = _uid
         folderName = _folderName
         path = _path
@@ -113,28 +115,28 @@ class OwlMessage {
         message.writeTo(fos)
     }
 
-    fun setFlag(flag: Flags.Flag){
+    fun setFlag(flag: Flags.Flag) {
         message.setFlag(flag, true)
     }
 
-    fun saveFlags(){
+    fun saveFlags() {
         val file = RandomAccessFile("$path/$folderName/$uid", "rw")
         val flagsBits = mimeManager.parseFlagsToInt(message.flags)
         file.write(flagsBits)
         file.close()
     }
 
-    suspend fun encrypt(publicKey: PublicKey){
+    suspend fun encrypt(publicKey: PublicKey) {
         val cryptoManager = OwlCryptoManager()
         val keyManager = OwlKeysManager()
         var textSymmetricKeyString = ""
         // encrypt text
-        withContext(Dispatchers.IO){
+        withContext(Dispatchers.IO) {
             message.saveChanges()
-            if (text.isNotEmpty()){
+            if (text.isNotEmpty()) {
                 val secretKey = keyManager.generateSecretKey()
-                mimeManager.setText(message, cryptoManager.encrypt(text, secretKey), "text/plain")
-                mimeManager.setText(message, cryptoManager.encrypt(html, secretKey), "text/html")
+                mimeManager.setText(message, cryptoManager.encrypt(text, secretKey), PLAIN_MIME_TYPE)
+                mimeManager.setText(message, cryptoManager.encrypt(html, secretKey), HTML_MIME_TYPE)
                 textSymmetricKeyString = cryptoManager.encryptKeyBase64(secretKey, publicKey)
             }
             // encrypt attachments
@@ -143,33 +145,25 @@ class OwlMessage {
                 val secretKey = keyManager.generateSecretKey()
                 val encryptedBytes = cryptoManager.encrypt(part.inputStream.readBytes(), secretKey)
                 val encryptedKey = cryptoManager.encryptKey(secretKey, publicKey)
-                val bytesDataSource = ByteArrayDataSource(encryptedKey + encryptedBytes, part.contentType)
+                val bytesDataSource =
+                    ByteArrayDataSource(encryptedKey + encryptedBytes, part.contentType)
                 part.dataHandler = DataHandler(bytesDataSource)
             }
             // set encrypted header with key
             if (attachments.isNotEmpty() || text.isNotEmpty())
-                message.setHeader( ENCRYPTION_HEADER_NAME, textSymmetricKeyString)
+                message.setHeader(ENCRYPTION_HEADER_NAME, textSymmetricKeyString)
         }
     }
 
-    suspend fun decrypt(privateKey: PrivateKey){
+    suspend fun decrypt(privateKey: PrivateKey) {
         val cryptoManager = OwlCryptoManager()
         // decrypt text
-        withContext(Dispatchers.IO){
-            message.saveChanges()
-            if (text.isNotEmpty()){
+        withContext(Dispatchers.IO) {
+            if (text.isNotEmpty()) {
                 val encryptedKey = message.getHeader(ENCRYPTION_HEADER_NAME)[0]
                 val secretKey = cryptoManager.decryptKey(encryptedKey, privateKey)
-                mimeManager.setText(
-                    message,
-                    cryptoManager.decrypt(text, secretKey),
-                    "text/plain"
-                )
-                mimeManager.setText(
-                    message,
-                    cryptoManager.decrypt(html, secretKey),
-                    "text/html"
-                )
+                mimeManager.setText(message, cryptoManager.decrypt(text, secretKey), PLAIN_MIME_TYPE)
+                mimeManager.setText(message, cryptoManager.decrypt(html, secretKey), HTML_MIME_TYPE)
             }
             // decrypt attachments
             val attachments = attachmentParts
@@ -188,13 +182,11 @@ class OwlMessage {
                 )
                 part.dataHandler = DataHandler(bytesDataSource)
             }
-            message.saveChanges()
         }
     }
 
-    suspend fun sign(privateKey: PrivateKey){
-        withContext(Dispatchers.IO){
-            message.saveChanges()
+    suspend fun sign(privateKey: PrivateKey) {
+        withContext(Dispatchers.IO) {
             val cryptoManager = OwlCryptoManager()
             message.setHeader(
                 SIGNATURE_HEADER_NAME,
@@ -203,9 +195,9 @@ class OwlMessage {
         }
     }
 
-    suspend fun verify(publicKey: PublicKey): Boolean{
+    suspend fun verify(publicKey: PublicKey): Boolean {
         var result = false
-        withContext(Dispatchers.IO){
+        withContext(Dispatchers.IO) {
             val cryptoManager = OwlCryptoManager()
             val digest = message.getHeader(SIGNATURE_HEADER_NAME)[0]
             result = cryptoManager.verify(mimeManager.getBytesToSign(message), digest, publicKey)

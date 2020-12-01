@@ -94,14 +94,15 @@ class SendMailActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSIONS_REQUEST_CODE)
             if ((grantResults.isNotEmpty() &&
-                        grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            ) {
                 showFilePickerIntent(PICK_ATTACHMENT_REQUEST_CODE)
             }
     }
 
     private suspend fun getAttachment(data: Intent): UriAttachment {
         val uri = UriAttachment(data.data as Uri, this)
-        withContext(Dispatchers.IO){
+        withContext(Dispatchers.IO) {
             val fis = uri.getInputStream() ?: throw FileNotFoundException("")
             fis.close()
         }
@@ -130,7 +131,7 @@ class SendMailActivity : AppCompatActivity() {
     private fun initViewsListeners() {
         confirmDialog.setPositiveButton(getString(R.string.dialog_yes)) { _: DialogInterface, _: Int ->
             CoroutineScope(Dispatchers.Main).launch {
-                try{
+                try {
                     loadingDialog.setTitle(getString(R.string.loading_title_request))
                     loadingDialog.show()
                     val publicEncryptionKey = settings.getPublicKeyString(user.email, ENCRYPT_KEY)
@@ -143,21 +144,17 @@ class SendMailActivity : AppCompatActivity() {
                     )
                     managerSMTP.sendMessage(message)
                     shortToast(getString(R.string.request_sent))
-                }
-                catch (e: AuthenticationFailedException){
+                } catch (e: AuthenticationFailedException) {
                     println(e.message)
                     shortToast(getString(R.string.auth_error))
-                }
-                catch (e: MessagingException){
+                } catch (e: MessagingException) {
                     println(e.message)
                     Snackbar.make(
-                        this@SendMailActivity.
-                        constraintLayout,
+                        this@SendMailActivity.constraintLayout,
                         getString(R.string.internet_connection),
                         Snackbar.LENGTH_LONG
                     ).show()
-                }
-                finally {
+                } finally {
                     loadingDialog.dismiss()
                 }
             }
@@ -291,7 +288,7 @@ class SendMailActivity : AppCompatActivity() {
         subject: String,
         plainText: String,
         html: String
-    ){
+    ) {
         loadingDialog.setTitle(getString(R.string.loading_title_sending))
         val mimeMessage = managerSMTP.getMimeMessage(toEmail, subject, attachments, plainText, html)
         CoroutineScope(Dispatchers.Main).launch {
@@ -302,32 +299,33 @@ class SendMailActivity : AppCompatActivity() {
                     mimeMessage
                 )
                 if (doEncrypt.isChecked)
-                    message.encrypt(settings.getSubscriberPublicKey(user.email, toEmail, ENCRYPT_KEY))
-                if (doEcp.isChecked){
+                    message.encrypt(
+                        settings.getSubscriberPublicKey(
+                            user.email,
+                            toEmail,
+                            ENCRYPT_KEY
+                        )
+                    )
+                if (doEcp.isChecked) {
                     settings.getSubscriberPublicKey(user.email, toEmail, SIGN_KEY)
                     message.sign(settings.getPrivateKey(user.email, SIGN_KEY))
                 }
                 managerSMTP.sendMessage(message.message)
                 setResult(RESULT_OK)
                 this@SendMailActivity.finish()
-            }
-            catch (e: AuthenticationFailedException){
+            } catch (e: AuthenticationFailedException) {
                 shortToast(getString(R.string.auth_error))
-            }
-            catch (e: MessagingException){
+            } catch (e: MessagingException) {
                 Snackbar.make(
-                    this@SendMailActivity.
-                    constraintLayout,
+                    this@SendMailActivity.constraintLayout,
                     getString(R.string.internet_connection),
                     Snackbar.LENGTH_LONG
                 ).show()
-            }
-            catch (e: SettingsException){
+            } catch (e: SettingsException) {
                 emailToRequest = toEmail
                 confirmDialog.setMessage(getString(R.string.send_request_dialog_message, toEmail))
                 confirmDialog.show()
-            }
-            finally {
+            } finally {
                 loadingDialog.dismiss()
             }
         }

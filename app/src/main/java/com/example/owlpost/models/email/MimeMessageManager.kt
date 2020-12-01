@@ -18,6 +18,8 @@ const val ENCRYPTION_KEY_EXCHANGE_HEADER_NAME = "X-Owl-Encryption-Exchange"
 const val SIGNATURE_KEY_EXCHANGE_HEADER_NAME = "X-Owl-Sign-Exchange"
 const val EXCHANGE_REQUEST_SUBJECT = "OwlPost exchange request!"
 const val EXCHANGE_RESPONSE_SUBJECT = "OwlPost exchange response!"
+const val PLAIN_MIME_TYPE = "text/plain"
+const val HTML_MIME_TYPE = "text/html"
 
 class MimeMessageManager {
     fun buildMimeMessage(
@@ -36,9 +38,9 @@ class MimeMessageManager {
         val multiPart = MimeMultipart() // message multipart
         // set text into alternative multipart (plain and html)
         val textMultipart = MimeMultipart("alternative")
-        val plainTextBodyPart = buildTextBodyPart(plainText, "text/plain")
+        val plainTextBodyPart = buildTextBodyPart(plainText, PLAIN_MIME_TYPE)
         textMultipart.addBodyPart(plainTextBodyPart)
-        val htmlBodyPart = buildTextBodyPart(html, "text/html")
+        val htmlBodyPart = buildTextBodyPart(html, HTML_MIME_TYPE)
         textMultipart.addBodyPart(htmlBodyPart)
         //add text into message multipart
         val textMultipartWrapper = MimeBodyPart()

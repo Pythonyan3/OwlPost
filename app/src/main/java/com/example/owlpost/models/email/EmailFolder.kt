@@ -73,10 +73,6 @@ class EmailFolder {
         writer.close()
     }
 
-    fun remove(path: String) {
-        File("$path/$folderName").deleteRecursively()
-    }
-
     fun removeMessage(uid: Long, path: String){
         File("$path/$folderName/$uid").delete()
     }
