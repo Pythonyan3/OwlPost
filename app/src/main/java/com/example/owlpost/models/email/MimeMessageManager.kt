@@ -9,7 +9,6 @@ import javax.mail.internet.MimeBodyPart
 import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 import javax.mail.util.ByteArrayDataSource
-import kotlin.math.ceil
 
 const val ENCRYPTION_HEADER_NAME = "X-Owl-Encryption"
 const val SIGNATURE_HEADER_NAME = "X-Owl-Sign"
@@ -37,9 +36,9 @@ class MimeMessageManager {
         val multiPart = MimeMultipart() // message multipart
         // set text into alternative multipart (plain and html)
         val textMultipart = MimeMultipart("alternative")
-        val plainTextBodyPart = buildPlainTextBodyPart(plainText)
+        val plainTextBodyPart = buildTextBodyPart(plainText, "text/plain")
         textMultipart.addBodyPart(plainTextBodyPart)
-        val htmlBodyPart = buildHTMLBodyPart(html)
+        val htmlBodyPart = buildTextBodyPart(html, "text/html")
         textMultipart.addBodyPart(htmlBodyPart)
         //add text into message multipart
         val textMultipartWrapper = MimeBodyPart()
@@ -53,16 +52,29 @@ class MimeMessageManager {
         message.setContent(multiPart)
     }
 
-    private fun buildPlainTextBodyPart(text: String): MimeBodyPart {
-        val bodyPart = MimeBodyPart()
-        bodyPart.setContent(text, "text/plain; charset=utf-8")
-        bodyPart.setHeader("Content-Transfer-Encoding", "base64")
-        return bodyPart
+    fun parseText(message: MimeMessage, mimeType: String): String {
+        var result = ""
+        when {
+            message.isMimeType(mimeType) ->
+                result += message.content.toString()
+            message.isMimeType("multipart/*") ->
+                result += parseBodyPartText(message.content as MimeMultipart, mimeType)
+        }
+        return result
     }
 
-    private fun buildHTMLBodyPart(text: String): MimeBodyPart {
+    fun setText(message: MimeMessage, text: String, mimeType: String){
+        when {
+            message.isMimeType(mimeType) ->
+                message.setContent(text, "$mimeType; charset=utf-8")
+            message.isMimeType("multipart/*") ->
+                setBodyPartText(message.content as MimeMultipart, text, mimeType)
+        }
+    }
+
+    private fun buildTextBodyPart(text: String, mimeType: String): MimeBodyPart {
         val bodyPart = MimeBodyPart()
-        bodyPart.setContent(text, "text/html; charset=utf-8")
+        bodyPart.setContent(text, "$mimeType; charset=utf-8")
         bodyPart.setHeader("Content-Transfer-Encoding", "base64")
         return bodyPart
     }
@@ -77,18 +89,7 @@ class MimeMessageManager {
         return attachmentBodyPart
     }
 
-    fun parseText(message: MimeMessage, mimeType: String): String {
-        var result = ""
-        when {
-            message.isMimeType(mimeType) ->
-                result += message.content.toString()
-            message.isMimeType("multipart/*") ->
-                result += parseBodyPartsText(message.content as MimeMultipart, mimeType)
-        }
-        return result
-    }
-
-    private fun parseBodyPartsText(multipart: MimeMultipart, mimeType: String): String{
+    private fun parseBodyPartText(multipart: MimeMultipart, mimeType: String): String{
         var result = ""
         try{
             for (i in 0 until multipart.count){
@@ -96,40 +97,24 @@ class MimeMessageManager {
                 if (bodyPart.isMimeType(mimeType))
                     result += bodyPart.content.toString()
                 else if (bodyPart.isMimeType("multipart/*"))
-                    result += parseBodyPartsText(bodyPart.content as MimeMultipart, mimeType)
+                    result += parseBodyPartText(bodyPart.content as MimeMultipart, mimeType)
             }
         }
         catch (e: MessagingException) { /*Missing start bounds (no body parts)*/ }
         return result
     }
 
-    fun parseTextParts(message: MimeMessage, mimeType: String): Array<Part> {
-        val result = ArrayList<Part>()
-        when {
-            message.isMimeType(mimeType) ->{
-                println(message.contentType)
-                println("Само сообщение текст!!")
-                result.add(message)
-            }
-            message.isMimeType("multipart/*") ->
-                result.addAll(parseBodyPartTextParts(message.content as MimeMultipart, mimeType))
-        }
-        return result.toTypedArray()
-    }
-
-    private fun parseBodyPartTextParts(multipart: MimeMultipart, mimeType: String): Array<Part>{
-        val result = ArrayList<Part>()
+    private fun setBodyPartText(multipart: MimeMultipart, text: String, mimeType: String){
         try{
             for (i in 0 until multipart.count){
                 val bodyPart = multipart.getBodyPart(i)
                 if (bodyPart.isMimeType(mimeType))
-                    result.add(bodyPart)
+                    bodyPart.setContent(text, "$mimeType; charset=utf-8")
                 else if (bodyPart.isMimeType("multipart/*"))
-                    result.addAll(parseBodyPartTextParts(bodyPart.content as MimeMultipart, mimeType))
+                    setBodyPartText(bodyPart.content as MimeMultipart, text, mimeType)
             }
         }
         catch (e: MessagingException) { /*Missing start bounds (no body parts)*/ }
-        return result.toTypedArray()
     }
 
     fun parseAttachmentsParts(message: MimeMessage): Array<BodyPart>{
@@ -149,15 +134,8 @@ class MimeMessageManager {
     }
 
     fun getBytesToSign(message: MimeMessage): ByteArray {
-        var byteToSign = ByteArray(0)
-        var parts = parseTextParts(message, "text/plain")
-        parts.forEach { part ->
-            byteToSign += part.content.toString().toByteArray(Charsets.UTF_8)
-        }
-        parts = parseTextParts(message, "text/html")
-        parts.forEach { part ->
-            byteToSign += part.content.toString().toByteArray(Charsets.UTF_8)
-        }
+        var byteToSign: ByteArray = parseText(message, "text/plain").toByteArray(Charsets.UTF_8)
+        byteToSign += parseText(message, "text/html").toByteArray(Charsets.UTF_8)
         parseAttachmentsParts(message).forEach { part ->
             byteToSign += part.inputStream.readBytes()
         }

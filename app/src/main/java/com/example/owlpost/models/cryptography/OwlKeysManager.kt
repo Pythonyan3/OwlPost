@@ -10,6 +10,8 @@ import javax.crypto.SecretKey
 
 const val ASYMMETRIC_ENCRYPT_ALGORITHM = "RSA"
 const val SYMMETRIC_ENCRYPT_ALGORITHM = "AES"
+const val SYMMETRIC_KEY_SIZE = 256
+const val ASYMMETRIC_KEY_SIZE = 2048
 const val ENCRYPT_KEY = 0x01
 const val SIGN_KEY = 0x02
 const val PUBLIC_KEY = 0x04
@@ -19,13 +21,13 @@ const val PRIVATE_KEY = 0x08
 class OwlKeysManager{
     fun generateSecretKey(algorithm: String = SYMMETRIC_ENCRYPT_ALGORITHM): SecretKey{
         val keyGen = KeyGenerator.getInstance(algorithm)
-        keyGen.init(256)
+        keyGen.init(SYMMETRIC_KEY_SIZE)
         return keyGen.generateKey()
     }
 
     fun generateKeysPair(algorithm: String = ASYMMETRIC_ENCRYPT_ALGORITHM): KeyPair {
         val keyPairGenerator = KeyPairGenerator.getInstance(algorithm)
-        keyPairGenerator.initialize(2048)
+        keyPairGenerator.initialize(ASYMMETRIC_KEY_SIZE)
         return keyPairGenerator.generateKeyPair()
     }
 

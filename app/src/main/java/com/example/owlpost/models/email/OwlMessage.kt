@@ -3,6 +3,7 @@ package com.example.owlpost.models.email
 
 import com.example.owlpost.models.cryptography.OwlCryptoManager
 import com.example.owlpost.models.cryptography.OwlKeysManager
+import com.example.owlpost.models.cryptography.SYMMETRIC_KEY_SIZE
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -132,14 +133,8 @@ class OwlMessage {
             message.saveChanges()
             if (text.isNotEmpty()){
                 val secretKey = keyManager.generateSecretKey()
-                val plainTextParts = mimeManager.parseTextParts(message, "text/plain")
-                plainTextParts.forEach { part ->
-                    part.setContent(cryptoManager.encrypt(part.content.toString(), secretKey), "text/plain; charset=utf-8")
-                }
-                val htmlTextParts = mimeManager.parseTextParts(message, "text/html")
-                htmlTextParts.forEach { part ->
-                    part.setContent(cryptoManager.encrypt(part.content.toString(), secretKey), "text/html; charset=utf-8")
-                }
+                mimeManager.setText(message, cryptoManager.encrypt(text, secretKey), "text/plain")
+                mimeManager.setText(message, cryptoManager.encrypt(html, secretKey), "text/html")
                 textSymmetricKeyString = cryptoManager.encryptKeyBase64(secretKey, publicKey)
             }
             // encrypt attachments
@@ -165,30 +160,30 @@ class OwlMessage {
             if (text.isNotEmpty()){
                 val encryptedKey = message.getHeader(ENCRYPTION_HEADER_NAME)[0]
                 val secretKey = cryptoManager.decryptKey(encryptedKey, privateKey)
-                mimeManager.parseTextParts(message, "text/plain").forEach { part ->
-                    part.setContent(cryptoManager.decrypt(
-                        part.content.toString(),
-                        secretKey
-                    ), "text/plain; charset=utf-8")
-                }
-                mimeManager.parseTextParts(message, "text/html").forEach { part ->
-                    part.setContent(cryptoManager.decrypt(
-                        part.content.toString(),
-                        secretKey
-                    ), "text/html; charset=utf-8")
-                }
+                mimeManager.setText(
+                    message,
+                    cryptoManager.decrypt(text, secretKey),
+                    "text/plain"
+                )
+                mimeManager.setText(
+                    message,
+                    cryptoManager.decrypt(html, secretKey),
+                    "text/html"
+                )
             }
             // decrypt attachments
             val attachments = attachmentParts
             attachments.forEach { part ->
-                val fis = part.inputStream
-                val encryptedSecretKey = ByteArray(256)
-                fis.read(encryptedSecretKey)
-                val encryptedData = ByteArray(fis.available())
-                fis.read(encryptedData)
-                val secretKey = cryptoManager.decryptKey(encryptedSecretKey, privateKey)
+                val encryptedBytes = part.inputStream.readBytes()
+                val secretKey = cryptoManager.decryptKey(
+                    encryptedBytes.sliceArray(0 until SYMMETRIC_KEY_SIZE),
+                    privateKey
+                )
                 val bytesDataSource = ByteArrayDataSource(
-                    cryptoManager.decrypt(encryptedData, secretKey),
+                    cryptoManager.decrypt(
+                        encryptedBytes.sliceArray(SYMMETRIC_KEY_SIZE until encryptedBytes.size),
+                        secretKey
+                    ),
                     part.contentType
                 )
                 part.dataHandler = DataHandler(bytesDataSource)

@@ -21,14 +21,14 @@ class OwlCryptoManager(private val asymmetricAlgorithm: String = "RSA", private 
     fun encrypt(bytes: ByteArray, secretKey: SecretKey): ByteArray {
         val cipher = Cipher.getInstance(symmetricAlgorithm)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-        return Base64.encode(cipher.doFinal(bytes), Base64.NO_WRAP)
+        return cipher.doFinal(bytes)
     }
 
     @SuppressLint("GetInstance")
     fun decrypt(bytes: ByteArray, secretKey: SecretKey): ByteArray {
         val cipher = Cipher.getInstance(symmetricAlgorithm)
         cipher.init(Cipher.DECRYPT_MODE, secretKey)
-        return cipher.doFinal(Base64.decode(bytes, Base64.NO_WRAP))
+        return cipher.doFinal(bytes)
     }
 
     @SuppressLint("GetInstance")
