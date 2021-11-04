@@ -2,16 +2,16 @@
 
 ## :e-mail: Email клиент с использованием криптографических средств защиты
 
-1. Отправка сообщений с использованием SMTP протокола;
-2. Получение почты с использованием IMAP протокола;
-3. Использование нескольких почтовых ящиков;
-4. Минимальное форматирование письма (**жирный**, *курсив*, <u>подчеркнутый</u>, цвет шрифта и цвет заливки);
-5. Хранение писем на клиенте;
-6. Использование криптографических алгоритмов для шифрования и ЭЦП почтового сообщения.
+1. Sending messages with SMTP;
+2. Receiving messages with IMAP;
+3. Using multiple mailboxes;
+4. Message text formatting (**bold**, *italic*, <u>underline</u>, text color and highlight);
+5. Storing messages on device;
+6. Encryption/decryption and signing messages.
 
-## :closed_lock_with_key: Используемые алгоритмы шифрования
+## :closed_lock_with_key: Encryption algorithms
 
-- Симметричный алгоритм шифрования - Rijndael (AES);
-- Ассиметричный алгоритм шифрования для ключа симметричного алгоритма - RSA;
-- Алгоритм хеширования - SHA2;
-- Ассиметричный алгоритм шифрования для ЭЦП - RSA.
+- Symmetric encryption - Rijndael (AES);
+- Asymmetric encryption of symmetric encryption keys - RSA;
+- Hash for signing - SHA2;
+- Assymetric encrypton for signing - RSA.
